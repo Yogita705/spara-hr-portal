@@ -20,6 +20,7 @@ import {
   MessageSquareText,
   ChevronRight,
   Clock,
+  Menu,
 } from 'lucide-react';
 import {
   reviewLeaveAction,
@@ -79,6 +80,7 @@ export default function AdminDashboard({
   const [leaveSearch, setLeaveSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'resolved'>('all');
   const [msg, setMsg] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Active dialog popup state
   const [activeAction, setActiveAction] = useState<{ id: string; type: 'remark' | 'reject' | 'revoke'; applicantName: string } | null>(null);
@@ -321,18 +323,38 @@ export default function AdminDashboard({
 
   return (
     <div className="flex min-h-screen bg-slate-100/70 text-slate-900 font-sans antialiased">
+      {/* Mobile Dark Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-xs md:hidden"
+        />
+      )}
+
       {/* ================= 1. PROFESSIONAL LEFT NAVIGATION SIDEBAR ================= */}
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col justify-between border-r border-slate-800 bg-slate-950 text-slate-300">
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col justify-between border-r border-slate-800 bg-slate-950 text-slate-300 transition-transform duration-200 ease-in-out md:translate-x-0 ${
+          mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        }`}
+      >
         <div>
-          {/* Brand Header */}
-          <div className="flex h-16 items-center gap-3 border-b border-slate-800/80 px-5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 font-black text-slate-950 shadow-xs">
-              S
+          {/* Brand Header with Close button on Mobile */}
+          <div className="flex h-16 items-center justify-between border-b border-slate-800/80 px-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 font-black text-slate-950 shadow-xs">
+                S
+              </div>
+              <div>
+                <div className="text-xs font-black tracking-widest text-emerald-400 uppercase">SPARA CORP</div>
+                <div className="text-[11px] font-medium text-slate-400">Enterprise Operations</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs font-black tracking-widest text-emerald-400 uppercase">SPARA CORP</div>
-              <div className="text-[11px] font-medium text-slate-400">Enterprise Operations</div>
-            </div>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white md:hidden"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Nav Links */}
@@ -468,15 +490,26 @@ export default function AdminDashboard({
       </aside>
 
       {/* ================= 2. MAIN WORKSPACE WITH GRIDS & SOFTWARE AESTHETICS ================= */}
-      <div className="ml-64 flex-1 min-w-0 flex flex-col">
+      <div className="ml-0 md:ml-64 flex-1 min-w-0 flex flex-col">
         {/* Top Breadcrumb & Status Bar with Notification Bell */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-md px-8 shadow-2xs">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="font-semibold text-slate-400">SPARA</span>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
-            <span className="font-semibold text-slate-400">Authority Portal</span>
-            <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
-            <span className="font-bold text-slate-900 capitalize">{tab.replace('_', ' ')} Management</span>
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-8 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="rounded-lg border border-slate-200 p-2 text-slate-700 hover:bg-slate-100 md:hidden"
+              aria-label="Open Navigation"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="font-bold text-slate-900 capitalize text-sm sm:text-xs">
+                {tab.replace('_', ' ')}
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-slate-400 font-medium">
+                <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
+                Authority Portal
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -504,7 +537,7 @@ export default function AdminDashboard({
         </header>
 
         {/* Content View */}
-        <main className="p-8 space-y-6">
+        <main className="p-3.5 sm:p-8 space-y-4 sm:space-y-6">
           {msg && (
             <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-900 shadow-2xs">
               <span>{msg}</span>
