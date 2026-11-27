@@ -86,31 +86,67 @@ export default function AdminDashboard({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const router = useRouter();
 
-  // Real-time toast state
-  const [liveToast, setLiveToast] = useState<{ title: string; desc: string; targetTab: 'leaves' | 'advances' | 'store' } | null>(null);
+  // Real-time toast state with distinct alert categories
+  const [liveToast, setLiveToast] = useState<{
+    type: 'leave' | 'advance' | 'store';
+    title: string;
+    desc: string;
+    targetTab: 'leaves' | 'advances' | 'store';
+  } | null>(null);
 
   // Track previous counts to detect fresh arrivals
   const prevLeavesCount = useRef(allLeaves.length);
   const prevAdvancesCount = useRef(allAdvances.length);
   const prevStoreCount = useRef(allStore.length);
 
-  // Audio chime
-  const playChime = () => {
+  // Distinct high-attention audio alerts & desktop notifications
+  const playChime = (kind: 'leave' | 'advance' | 'store') => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.12, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.4);
+
+      if (kind === 'advance') {
+        // High-energy 3-tone cash chime for money advances
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime);       // C5
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+        osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.2);// C6
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+      } else if (kind === 'leave') {
+        // Crisp 2-tone chime for leaves
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      } else {
+        // Rapid double beep for store/repair
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(740, ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      }
     } catch {}
   };
+
+  // Request browser desktop notification permission on first load
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
 
   // Personal leave/store state
   const [leaveType, setLeaveType] = useState<'full_day' | 'half_day' | 'short_leave'>('full_day');
@@ -175,32 +211,50 @@ export default function AdminDashboard({
     }
   }, [totalPending]);
 
-  // Detect new arrivals & trigger toast + chime
+  // Detect new arrivals & trigger distinct toast, sound, and OS desktop notification
   useEffect(() => {
     if (allLeaves.length > prevLeavesCount.current) {
       const latest = allLeaves[0];
-      playChime();
+      playChime('leave');
       setLiveToast({
-        title: 'New Leave Request Received',
-        desc: `${latest?.applicant?.full_name || 'An employee'} applied for ${latest?.type?.replace('_', ' ') || 'leave'}.`,
+        type: 'leave',
+        title: '🚨 NEW LEAVE REQUEST RECEIVED',
+        desc: `${latest?.applicant?.full_name || 'Staff'} applied for ${latest?.type?.replace('_', ' ') || 'leave'} (${latest?.days_count || 1} day).`,
         targetTab: 'leaves',
       });
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('🔔 New Leave Application', {
+          body: `${latest?.applicant?.full_name} applied for leave.`,
+        });
+      }
     } else if (allAdvances.length > prevAdvancesCount.current) {
       const latest = allAdvances[0];
-      playChime();
+      playChime('advance');
       setLiveToast({
-        title: 'New Salary Advance Request',
-        desc: `${latest?.applicant?.full_name || 'An employee'} requested ₹${latest?.amount || ''} advance.`,
+        type: 'advance',
+        title: '💰 NEW SALARY ADVANCE REQUEST',
+        desc: `${latest?.applicant?.full_name || 'Staff'} requested ₹${Number(latest?.amount || 0).toLocaleString('en-IN')}.`,
         targetTab: 'advances',
       });
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('💰 New Salary Advance', {
+          body: `${latest?.applicant?.full_name} requested ₹${latest?.amount}.`,
+        });
+      }
     } else if (allStore.length > prevStoreCount.current) {
       const latest = allStore[0];
-      playChime();
+      playChime('store');
       setLiveToast({
-        title: 'New Store Requisition',
-        desc: `${latest?.applicant?.full_name || 'An employee'} requested "${latest?.title || 'item'}".`,
+        type: 'store',
+        title: '📦 NEW STORE & REPAIR INDENT',
+        desc: `${latest?.applicant?.full_name || 'Staff'} requested: "${latest?.title || 'Item'}"`,
         targetTab: 'store',
       });
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('📦 New Store Indent', {
+          body: `${latest?.applicant?.full_name} requested ${latest?.title}.`,
+        });
+      }
     }
 
     prevLeavesCount.current = allLeaves.length;
@@ -983,43 +1037,81 @@ export default function AdminDashboard({
           )}
         </main>
       </div>
-{/* ================= 5. LIVE REAL-TIME FLOATING TOAST ALERT ================= */}
+{/* ================= 5. LIVE HIGH-ATTENTION FLOATING ALERT ================= */}
 {liveToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex w-96 items-start gap-3 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-white shadow-2xl animate-in slide-in-from-bottom-5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-bold">
-            <Bell className="h-5 w-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">{liveToast.title}</p>
-              <button
-                onClick={() => setLiveToast(null)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="mt-1 text-xs text-slate-300 truncate">{liveToast.desc}</p>
-            <div className="mt-2.5 flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setTab(liveToast.targetTab);
-                  setLiveToast(null);
-                }}
-                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs hover:bg-emerald-700 transition"
-              >
-                View Request →
-              </button>
-              <button
-                onClick={() => setLiveToast(null)}
-                className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-400 hover:text-white"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
+  <div className="fixed top-5 right-5 z-50 flex w-[420px] max-w-[92vw] items-start gap-3 rounded-2xl border-2 p-4 shadow-2xl backdrop-blur-md animate-in slide-in-from-top-6 duration-300 ring-4 ring-black/10 bg-slate-950 text-white border-amber-400"
+    style={{
+      borderColor:
+        liveToast.type === 'advance' ? '#10b981' : liveToast.type === 'leave' ? '#38bdf8' : '#c084fc',
+    }}
+  >
+    <div
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-black text-slate-950 shadow-md ${
+        liveToast.type === 'advance'
+          ? 'bg-emerald-400 text-emerald-950 ring-4 ring-emerald-400/30'
+          : liveToast.type === 'leave'
+          ? 'bg-sky-400 text-sky-950 ring-4 ring-sky-400/30'
+          : 'bg-purple-400 text-purple-950 ring-4 ring-purple-400/30'
+      }`}
+    >
+      {liveToast.type === 'advance' ? (
+        <IndianRupee className="h-6 w-6 stroke-[2.5]" />
+      ) : liveToast.type === 'leave' ? (
+        <Calendar className="h-6 w-6 stroke-[2.5]" />
+      ) : (
+        <Package className="h-6 w-6 stroke-[2.5]" />
       )}
+    </div>
+
+    <div className="flex-1 min-w-0">
+      <div className="flex items-start justify-between gap-2">
+        <p
+          className={`text-[11px] font-black tracking-wider uppercase ${
+            liveToast.type === 'advance'
+              ? 'text-emerald-400'
+              : liveToast.type === 'leave'
+              ? 'text-sky-400'
+              : 'text-purple-400'
+          }`}
+        >
+          {liveToast.title}
+        </p>
+        <button
+          onClick={() => setLiveToast(null)}
+          className="rounded-md p-0.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <p className="mt-1 text-xs font-semibold text-slate-200 leading-snug">{liveToast.desc}</p>
+
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          onClick={() => {
+            setTab(liveToast.targetTab);
+            setLiveToast(null);
+          }}
+          className={`rounded-xl px-4 py-2 text-xs font-bold text-slate-950 transition active:scale-95 shadow-md ${
+            liveToast.type === 'advance'
+              ? 'bg-emerald-400 hover:bg-emerald-300'
+              : liveToast.type === 'leave'
+              ? 'bg-sky-400 hover:bg-sky-300'
+              : 'bg-purple-400 hover:bg-purple-300'
+          }`}
+        >
+          Review Now →
+        </button>
+        <button
+          onClick={() => setLiveToast(null)}
+          className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800"
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {/* ================= 3. CLEAN ON-SCREEN DIALOG (POPUP) ================= */}
       {activeAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-in fade-in">
