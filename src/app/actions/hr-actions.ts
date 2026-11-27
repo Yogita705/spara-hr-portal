@@ -393,21 +393,23 @@ export async function revertLeaveApprovalAction(
       .eq('id', leave.user_id);
   }
 
-  // 4. Update leave status
-  await supabaseAdmin
-    .from('leave_requests')
-    .update({
-      status: 'rejected',
-      remarks: reason,
-    })
-    .eq('id', leaveId);
+// 4. Update leave status back to PENDING (Queue me wapas aa jayegi)
+await supabaseAdmin
+.from('leave_requests')
+.update({
+  status: 'pending',
+  remarks: null,
+  reviewed_by: null,
+  reviewed_at: null,
+})
+.eq('id', leaveId);
 
-  // Alert employee in Hindi
-  await supabaseAdmin.from('notifications').insert({
-    user_id: leave.user_id,
-    title: '⚠️ Chutti Approval Wapas Liya Gaya',
-    message: `${actor.full_name} ne aapki ${leave.start_date} ki chutti ka approval cancel kar diya hai. Aapka chutti quota wapas restore kar diya gaya hai.`,
-  });
+// Alert employee in Hindi
+await supabaseAdmin.from('notifications').insert({
+user_id: leave.user_id,
+title: '⏳ Chutti Dobara Review Me Hai',
+message: `${actor.full_name} ne aapki ${leave.start_date} ki chutti ko dobara Pending/Review me daal diya hai. Aapka chutti quota wapas add ho gaya hai.`,
+});
 
   revalidatePath('/dashboard');
   revalidatePath('/');

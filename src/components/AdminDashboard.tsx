@@ -1196,9 +1196,9 @@ export default function AdminDashboard({
                     Are you sure you want to revoke the approval for <strong>{activeAction.applicantName}</strong>?
                   </p>
                   <ul className="mt-2 list-disc list-inside space-y-1 text-slate-600">
-                    <li>The leave request will be marked as <strong>Rejected / Cancelled</strong>.</li>
+                    <li>The leave request will be marked as <strong>Pending</strong> (Wapas review queue me chali jayegi).</li>
                     <li>The deducted leave quota will be <strong>restored immediately</strong>.</li>
-                    <li>An automated alert will be sent to the employee.</li>
+                    <li>Employee ko alert jayega ki unki application dobara pending me hai.</li>
                   </ul>
                 </div>
               </div>
