@@ -57,27 +57,36 @@ export default function MobileStaffView({
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // Phone screen touch karte hi audio unlock
+  // 1. iPhone WebKit Security Bypass (Audio + Voice Priming)
   useEffect(() => {
-    const unlock = () => {
+    const unlockBoth = () => {
       try {
+        // AudioContext unlock
         const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
         if (!audioCtxRef.current && AudioClass) audioCtxRef.current = new AudioClass();
         if (audioCtxRef.current?.state === 'suspended') audioCtxRef.current.resume();
+
+        // SpeechSynthesis Priming for iPhone (Empty utterance primes Apple speech engine)
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          const primer = new SpeechSynthesisUtterance(' ');
+          primer.volume = 0.01;
+          window.speechSynthesis.speak(primer);
+        }
       } catch {}
     };
-    window.addEventListener('touchstart', unlock, { once: true });
-    window.addEventListener('click', unlock, { once: true });
+
+    window.addEventListener('touchstart', unlockBoth, { once: true });
+    window.addEventListener('click', unlockBoth, { once: true });
     return () => {
-      window.removeEventListener('touchstart', unlock);
-      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlockBoth);
+      window.removeEventListener('click', unlockBoth);
     };
   }, []);
 
-  // Chime + Bolne wala Hindi AI Voice engine
-  const playVoiceNotification = (hindiText: string) => {
+  // 2. iPhone-Certified Sound & Voice Alert
+  const playVoiceNotification = (messageText: string) => {
     try {
-      // 1. Pehle Chime (Tun) bajega
+      // 1. Loud Chime (Tun)
       const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioClass) {
         if (!audioCtxRef.current) audioCtxRef.current = new AudioClass();
@@ -91,30 +100,31 @@ export default function MobileStaffView({
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, ctx.currentTime);
         osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.8, ctx.currentTime);
+        gain.gain.setValueAtTime(0.9, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
         osc.start();
         osc.stop(ctx.currentTime + 0.35);
       }
 
-      // 2. Chime ke 0.3 second baad Hindi me bolegi
+      // 2. Siri/iOS Voice (en-IN works on 100% of iPhones)
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(hindiText);
-        utterance.lang = 'hi-IN'; // Pure Hindi voice
-        utterance.volume = 1.0;   // Full Volume
-        utterance.rate = 0.95;    // Natural clear speed
-        utterance.pitch = 1.05;
+        window.speechSynthesis.resume(); // Fixes iOS paused queue lockup
 
-        const voices = window.speechSynthesis.getVoices();
-        const hindiVoice = voices.find(
-          (v) => v.lang.includes('hi') || v.lang.includes('IN') || v.name.includes('India')
+        const utterance = new SpeechSynthesisUtterance(messageText);
+        utterance.volume = 1.0;
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        utterance.lang = 'en-IN'; // Indian accent (Always downloaded on iOS)
+
+        const allVoices = window.speechSynthesis.getVoices();
+        const indianVoice = allVoices.find(
+          (v) => v.lang === 'en-IN' || v.lang === 'hi-IN' || v.name.includes('India') || v.name.includes('Rishi')
         );
-        if (hindiVoice) utterance.voice = hindiVoice;
+        if (indianVoice) utterance.voice = indianVoice;
 
         setTimeout(() => {
           window.speechSynthesis.speak(utterance);
-        }, 300);
+        }, 150);
       }
     } catch {}
   };
@@ -304,7 +314,14 @@ export default function MobileStaffView({
               {remainingLeaves} <span className="text-sm font-normal text-slate-300">/ {currentUser.annual_leave_quota}</span>
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => playVoiceNotification('Aapki chutti manzoor ho gayi hai')}
+              className="rounded-xl bg-emerald-700/80 hover:bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-emerald-100 border border-emerald-500/30"
+              title="Test Voice on iPhone"
+            >
+              🔊 Test Voice
+            </button>
             {activeTab !== 'home' && (
               <button onClick={() => setActiveTab('home')} className="rounded-xl bg-slate-700 px-3 py-2 text-xs font-bold">
                 ← Home
