@@ -79,13 +79,13 @@ export async function reviewLeaveAction(
 
   if (error) return { error: error.message };
 
-  // 4. Send clear Hindi notification to employee
+  // 4. Send clear notification to employee
   await supabaseAdmin.from('notifications').insert({
     user_id: leave.user_id,
-    title: decision === 'approved' ? '✅ Chutti Manzoor Ho Gayi Hai' : '❌ Chutti Mana Kar Di Gayi Hai',
+    title: decision === 'approved' ? '✅ Leave Manzoor Ho Gayi Hai' : '❌ Leave Mana Kar Di Gayi Hai',
     message: decision === 'approved' 
-      ? `Aapki ${leave.days_count || 1} din ki chutti ki request approve (haan) ho gayi hai. Quota update ho gaya hai.` 
-      : `Aapki chutti ki request mana (reject) ho gayi hai.${remarks ? ` Wajah: "${remarks}"` : ' Kripya HR/MDO se milein.'}`,
+      ? `Aapki ${leave.days_count || 1} din ki leave approve ho gayi hai. Quota update ho gaya hai.` 
+      : `Aapki leave ki request mana kar di gayi hai.${remarks ? ` Wajah: "${remarks}"` : ' Kripya HR/MDO se milein.'}`,
   });
 
   revalidatePath('/dashboard');
@@ -340,11 +340,11 @@ export async function sendLeaveRemarkAction(
 
   if (error) return { error: error.message };
 
-  // Send direct alert to employee mobile view in Hindi
+  // Send direct alert to employee mobile view
   await supabaseAdmin.from('notifications').insert({
     user_id: leave.user_id,
     title: `💬 Office Se Message Aaya Hai (${reviewer.full_name})`,
-    message: `Aapki chutti ke baare me: "${remark}"`,
+    message: `Aapki leave ke baare me: "${remark}"`,
   });
 
   revalidatePath('/dashboard');
@@ -404,12 +404,12 @@ await supabaseAdmin
 })
 .eq('id', leaveId);
 
-// Alert employee in Hindi
+// Alert employee
 await supabaseAdmin.from('notifications').insert({
-user_id: leave.user_id,
-title: '⏳ Chutti Dobara Review Me Hai',
-message: `${actor.full_name} ne aapki ${leave.start_date} ki chutti ko dobara Pending/Review me daal diya hai. Aapka chutti quota wapas add ho gaya hai.`,
-});
+  user_id: leave.user_id,
+  title: '⏳ Leave Dobara Review Me Hai',
+  message: `${actor.full_name} ne aapki ${leave.start_date} ki leave ko dobara Pending/Review me daal diya hai. Aapka leave quota wapas add ho gaya hai.`,
+  });
 
   revalidatePath('/dashboard');
   revalidatePath('/');

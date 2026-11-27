@@ -177,10 +177,10 @@ export default function MobileStaffView({
         const msg = (notifications[0].message || '').toLowerCase();
         const combined = `${title} ${msg}`;
 
-        if (combined.includes('chutti') && (combined.includes('manzoor') || combined.includes('approve') || combined.includes('haan'))) {
-          hindiVoiceMessage = 'Aapki chutti manzoor ho gayi hai.';
-        } else if (combined.includes('chutti') && (combined.includes('mana') || combined.includes('reject'))) {
-          hindiVoiceMessage = 'Aapki chutti ki request mana kar di gayi hai.';
+        if ((combined.includes('leave') || combined.includes('chutti')) && (combined.includes('manzoor') || combined.includes('approve') || combined.includes('haan'))) {
+          hindiVoiceMessage = 'Aapki leave manzoor ho gayi hai.';
+        } else if ((combined.includes('leave') || combined.includes('chutti')) && (combined.includes('mana') || combined.includes('reject'))) {
+          hindiVoiceMessage = 'Aapki leave ki request mana kar di gayi hai.';
         } else if (combined.includes('advance') && (combined.includes('manzoor') || combined.includes('approve') || combined.includes('release') || combined.includes('settle'))) {
           hindiVoiceMessage = 'Aapka advance manzoor ho gaya hai.';
         } else if (combined.includes('advance') && (combined.includes('mana') || combined.includes('reject'))) {
@@ -328,13 +328,6 @@ export default function MobileStaffView({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => playVoiceNotification('Aapki chutti manzoor ho gayi hai')}
-              className="rounded-xl bg-emerald-700/80 hover:bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-emerald-100 border border-emerald-500/30"
-              title="Test Voice on iPhone"
-            >
-              🔊 Test Voice
-            </button>
             {activeTab !== 'home' && (
               <button onClick={() => setActiveTab('home')} className="rounded-xl bg-slate-700 px-3 py-2 text-xs font-bold">
                 ← Home
@@ -415,7 +408,7 @@ export default function MobileStaffView({
               >
                 <div className="rounded-xl bg-blue-100 p-3 text-blue-700"><Calendar className="h-7 w-7" /></div>
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">Apply Leave (Chutti)</h2>
+                <h2 className="text-base font-bold text-slate-900">Apply Leave</h2>
                   <p className="text-xs text-slate-500">Full day, Half day & instant approval color</p>
                 </div>
               </button>
