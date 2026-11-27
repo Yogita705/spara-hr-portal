@@ -80,7 +80,8 @@ export default function AdminDashboard({
   const [leaveSearch, setLeaveSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'resolved'>('all');
   const [msg, setMsg] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Desktop hide/show
+  const [mobileOpen, setMobileOpen] = useState(false);  // Mobile hide/show
 
   // Active dialog popup state
   const [activeAction, setActiveAction] = useState<{ id: string; type: 'remark' | 'reject' | 'revoke'; applicantName: string } | null>(null);
@@ -324,21 +325,21 @@ export default function AdminDashboard({
   return (
     <div className="flex min-h-screen bg-slate-100/70 text-slate-900 font-sans antialiased">
       {/* Mobile Dark Backdrop */}
-      {mobileMenuOpen && (
+      {mobileOpen && (
         <div
-          onClick={() => setMobileMenuOpen(false)}
+          onClick={() => setMobileOpen(false)}
           className="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-xs md:hidden"
         />
       )}
 
-      {/* ================= 1. PROFESSIONAL LEFT NAVIGATION SIDEBAR ================= */}
+      {/* ================= 1. COLLAPSIBLE NAVIGATION SIDEBAR ================= */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col justify-between border-r border-slate-800 bg-slate-950 text-slate-300 transition-transform duration-200 ease-in-out md:translate-x-0 ${
-          mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col justify-between border-r border-slate-800 bg-slate-950 text-slate-300 transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? 'md:translate-x-0' : 'md:-translate-x-full'
+        } ${mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
       >
         <div>
-          {/* Brand Header with Close button on Mobile */}
+          {/* Brand Header with Toggle Close Button */}
           <div className="flex h-16 items-center justify-between border-b border-slate-800/80 px-5">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 font-black text-slate-950 shadow-xs">
@@ -350,8 +351,15 @@ export default function AdminDashboard({
               </div>
             </div>
             <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white md:hidden"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                  setMobileOpen(false);
+                } else {
+                  setSidebarOpen(false);
+                }
+              }}
+              title="Hide Sidebar"
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
             >
               <X className="h-4 w-4" />
             </button>
@@ -365,7 +373,7 @@ export default function AdminDashboard({
 
             {canSeeLeaves && (
               <button
-                onClick={() => setTab('leaves')}
+                onClick={() => { setTab('leaves'); setMobileOpen(false); }}
                 className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
                   tab === 'leaves'
                     ? 'bg-slate-800/90 font-bold text-white shadow-xs'
@@ -384,9 +392,9 @@ export default function AdminDashboard({
               </button>
             )}
 
-            {canSeeAdvances && (
+{canSeeAdvances && (
               <button
-                onClick={() => setTab('advances')}
+                onClick={() => { setTab('advances'); setMobileOpen(false); }}
                 className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
                   tab === 'advances'
                     ? 'bg-slate-800/90 font-bold text-white shadow-xs'
@@ -405,9 +413,9 @@ export default function AdminDashboard({
               </button>
             )}
 
-            {canSeeStore && (
+{canSeeStore && (
               <button
-                onClick={() => setTab('store')}
+                onClick={() => { setTab('store'); setMobileOpen(false); }}
                 className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
                   tab === 'store'
                     ? 'bg-slate-800/90 font-bold text-white shadow-xs'
@@ -426,9 +434,9 @@ export default function AdminDashboard({
               </button>
             )}
 
-            {canSeeStaff && (
+{canSeeStaff && (
               <button
-                onClick={() => setTab('staff')}
+                onClick={() => { setTab('staff'); setMobileOpen(false); }}
                 className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
                   tab === 'staff'
                     ? 'bg-slate-800/90 font-bold text-white shadow-xs'
@@ -443,9 +451,9 @@ export default function AdminDashboard({
               </button>
             )}
 
-            {!isChanniSir && (
+{!isChanniSir && (
               <button
-                onClick={() => setTab('my')}
+                onClick={() => { setTab('my'); setMobileOpen(false); }}
                 className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
                   tab === 'my'
                     ? 'bg-emerald-950/60 font-bold text-emerald-200 border border-emerald-800/50'
@@ -490,16 +498,24 @@ export default function AdminDashboard({
       </aside>
 
       {/* ================= 2. MAIN WORKSPACE WITH GRIDS & SOFTWARE AESTHETICS ================= */}
-      <div className="ml-0 md:ml-64 flex-1 min-w-0 flex flex-col">
+      <div className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'md:ml-0'} ml-0`}>
         {/* Top Breadcrumb & Status Bar with Notification Bell */}
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-8 shadow-2xs">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
+            {/* Unified ☰ Button for Desktop and Mobile */}
             <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="rounded-lg border border-slate-200 p-2 text-slate-700 hover:bg-slate-100 md:hidden"
-              aria-label="Open Navigation"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                  setMobileOpen(!mobileOpen);
+                } else {
+                  setSidebarOpen(!sidebarOpen);
+                }
+              }}
+              className="rounded-xl border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-50 transition active:scale-95 shadow-2xs"
+              title={sidebarOpen ? 'Hide Sidebar (Full Width)' : 'Show Sidebar'}
+              aria-label="Toggle Sidebar"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4 w-4" />
             </button>
             <div className="flex items-center gap-1.5 text-xs">
               <span className="font-bold text-slate-900 capitalize text-sm sm:text-xs">
@@ -511,7 +527,6 @@ export default function AdminDashboard({
               </span>
             </div>
           </div>
-
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
@@ -525,9 +540,12 @@ export default function AdminDashboard({
                   : 'border-slate-200 bg-slate-50 text-slate-600'
               }`}
             >
-              <Bell className={`h-4 w-4 ${totalPending > 0 ? 'text-amber-600 animate-bounce' : 'text-slate-400'}`} />
-              <span>
+              <Bell className={`h-4 w-4 shrink-0 ${totalPending > 0 ? 'text-amber-600 animate-bounce' : 'text-slate-400'}`} />
+              <span className="hidden sm:inline">
                 {totalPending > 0 ? `${totalPending} New Incoming Requests` : 'All Caught Up'}
+              </span>
+              <span className="sm:hidden font-mono">
+                {totalPending > 0 ? totalPending : '0'}
               </span>
               {totalPending > 0 && (
                 <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
