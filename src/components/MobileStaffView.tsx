@@ -373,16 +373,39 @@ export default function MobileStaffView({
 
         {/* ALERTS TAB */}
         {activeTab === 'alerts' && (
-          <div className="space-y-2">
-            <h2 className="text-base font-bold">Notifications</h2>
-            {notifications.map((n) => (
-              <div key={n.id} className="rounded-xl bg-white p-3.5 shadow-sm">
-                <p className="text-sm font-bold text-slate-900">{n.title}</p>
-                <p className="mt-0.5 text-xs text-slate-600">{n.message}</p>
-              </div>
-            ))}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between pb-1">
+              <h2 className="text-sm font-black uppercase tracking-wider text-slate-700">Audit & Updates Feed</h2>
+              <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                {notifications.length} events
+              </span>
+            </div>
+            {notifications.map((n) => {
+              const isGreen = n.title?.includes('🟢') || n.title?.includes('Sanctioned') || n.title?.includes('Disbursed');
+              const isRed = n.title?.includes('🔴') || n.title?.includes('Rejected');
+              return (
+                <div
+                  key={n.id}
+                  className={`relative rounded-2xl border bg-white p-3.5 shadow-xs transition ${
+                    !n.is_read ? 'border-l-4 border-l-blue-600' : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className={`text-xs font-black tracking-wide ${isGreen ? 'text-emerald-700' : isRed ? 'text-rose-700' : 'text-slate-900'}`}>
+                      {n.title}
+                    </p>
+                    <span className="text-[10px] font-mono font-semibold text-slate-400">
+                      {n.created_at ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-600 leading-relaxed font-medium">{n.message}</p>
+                </div>
+              );
+            })}
             {notifications.length === 0 && (
-              <p className="rounded-xl bg-white p-4 text-center text-xs text-slate-400">No notifications yet.</p>
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-xs text-slate-400">
+                No system alerts or log entries recorded.
+              </div>
             )}
           </div>
         )}

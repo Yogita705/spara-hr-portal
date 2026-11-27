@@ -79,13 +79,13 @@ export async function reviewLeaveAction(
 
   if (error) return { error: error.message };
 
-  // 4. Send notification to employee
+  // 4. Send structured enterprise notification to employee
   await supabaseAdmin.from('notifications').insert({
     user_id: leave.user_id,
-    title: decision === 'approved' ? 'Leave Approved' : 'Leave Rejected',
+    title: decision === 'approved' ? '🟢 Leave Sanctioned' : '🔴 Leave Not Approved',
     message: decision === 'approved' 
-      ? 'Your leave request has been approved.' 
-      : `Your leave request was rejected.${remarks ? ` Reason: ${remarks}` : ''}`,
+      ? `Leave sanctioned for ${leave.days_count || 1} day(s). Balance adjusted in annual quota.` 
+      : `Application could not be approved.${remarks ? ` Management note: "${remarks}"` : ' Please check with HR/MDO.'}`,
   });
 
   revalidatePath('/dashboard');
@@ -166,10 +166,10 @@ export async function bossReviewAdvanceAction(
 
   await supabaseAdmin.from('notifications').insert({
     user_id: adv.user_id,
-    title: approve ? 'Advance Approved (Green)' : 'Advance Rejected (Red)',
+    title: approve ? '💳 Advance Sanctioned by MD' : '❌ Advance Request Rejected',
     message: approve
-      ? `Prabh Sir approved your ₹${adv.amount} advance. Sent to Accounts for payout.`
-      : `Your advance request was rejected. ${remarks || ''}`,
+      ? `Executive approval granted for ₹${Number(adv.amount).toLocaleString('en-IN')}. Dispatched to Accounts Desk for payout clearance.`
+      : `Advance of ₹${Number(adv.amount).toLocaleString('en-IN')} was rejected.${remarks ? ` Reason: "${remarks}"` : ''} Guarantor locks released.`,
   });
 
   revalidatePath('/dashboard');
@@ -201,11 +201,11 @@ export async function accountsSettleAdvanceAction(advanceId: string, accountsUse
     .update({ is_active_lock: false })
     .eq('advance_id', advanceId);
 
-  await supabaseAdmin.from('notifications').insert({
-    user_id: adv.user_id,
-    title: 'Advance Paid & Settled',
-    message: `Accounts settled your ₹${adv.amount} advance. Your 4 guarantors are now unlocked.`,
-  });
+    await supabaseAdmin.from('notifications').insert({
+      user_id: adv.user_id,
+      title: '💰 Payout Disbursed & Settled',
+      message: `Amount ₹${Number(adv.amount).toLocaleString('en-IN')} has been settled by Accounts. All 4 guarantor liabilities have been released.`,
+    });
 
   revalidatePath('/dashboard');
   revalidatePath('/');
