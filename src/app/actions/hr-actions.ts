@@ -79,13 +79,13 @@ export async function reviewLeaveAction(
 
   if (error) return { error: error.message };
 
-  // 4. Send structured enterprise notification to employee
+  // 4. Send clear Hindi notification to employee
   await supabaseAdmin.from('notifications').insert({
     user_id: leave.user_id,
-    title: decision === 'approved' ? '🟢 Leave Sanctioned' : '🔴 Leave Not Approved',
+    title: decision === 'approved' ? '✅ Chutti Manzoor Ho Gayi Hai' : '❌ Chutti Mana Kar Di Gayi Hai',
     message: decision === 'approved' 
-      ? `Leave sanctioned for ${leave.days_count || 1} day(s). Balance adjusted in annual quota.` 
-      : `Application could not be approved.${remarks ? ` Management note: "${remarks}"` : ' Please check with HR/MDO.'}`,
+      ? `Aapki ${leave.days_count || 1} din ki chutti ki request approve (haan) ho gayi hai. Quota update ho gaya hai.` 
+      : `Aapki chutti ki request mana (reject) ho gayi hai.${remarks ? ` Wajah: "${remarks}"` : ' Kripya HR/MDO se milein.'}`,
   });
 
   revalidatePath('/dashboard');
@@ -166,10 +166,10 @@ export async function bossReviewAdvanceAction(
 
   await supabaseAdmin.from('notifications').insert({
     user_id: adv.user_id,
-    title: approve ? '💳 Advance Sanctioned by MD' : '❌ Advance Request Rejected',
+    title: approve ? '✅ Advance Manzoor Ho Gaya Hai' : '❌ Advance Mana Kar Diya Gaya Hai',
     message: approve
-      ? `Executive approval granted for ₹${Number(adv.amount).toLocaleString('en-IN')}. Dispatched to Accounts Desk for payout clearance.`
-      : `Advance of ₹${Number(adv.amount).toLocaleString('en-IN')} was rejected.${remarks ? ` Reason: "${remarks}"` : ''} Guarantor locks released.`,
+      ? `Prabh Sir ne aapka ₹${Number(adv.amount).toLocaleString('en-IN')} advance approve kar diya hai. Payout ke liye Accounts bhej diya gaya hai.`
+      : `Aapka ₹${Number(adv.amount).toLocaleString('en-IN')} advance mana ho gaya hai.${remarks ? ` Wajah: "${remarks}"` : ''} Guarantors unlock ho gaye hain.`,
   });
 
   revalidatePath('/dashboard');
@@ -203,8 +203,8 @@ export async function accountsSettleAdvanceAction(advanceId: string, accountsUse
 
     await supabaseAdmin.from('notifications').insert({
       user_id: adv.user_id,
-      title: '💰 Payout Disbursed & Settled',
-      message: `Amount ₹${Number(adv.amount).toLocaleString('en-IN')} has been settled by Accounts. All 4 guarantor liabilities have been released.`,
+      title: '💰 Advance Ke Paise Release Ho Gaye',
+      message: `Accounts ne aapka ₹${Number(adv.amount).toLocaleString('en-IN')} advance cash/account me release kar diya hai. Sabhi 4 guarantors free ho gaye hain.`,
     });
 
   revalidatePath('/dashboard');
@@ -258,15 +258,21 @@ export async function updateStoreStatusAction(
 
   if (error) return { error: error.message };
 
+  const titleMap = {
+    approved_to_store: '📦 Store Request Pass Ho Gayi Hai',
+    rejected_by_mdo: '❌ Store Request Mana Ho Gayi Hai',
+    issued_completed: '✅ Samaan Ready Hai - Collect Karein',
+  };
+
   const msgMap = {
-    approved_to_store: `MDO approved "${req.title}". Sent to Store (Sarabjot) for handover.`,
-    rejected_by_mdo: `Your request "${req.title}" was rejected by MDO.`,
-    issued_completed: `Your item "${req.title}" is ready / issued by Store!`,
+    approved_to_store: `MDO ne "${req.title}" pass kar di hai. Store se lene ke liye ready rahein.`,
+    rejected_by_mdo: `Aapki request "${req.title}" MDO dwara mana (reject) kar di gayi hai.`,
+    issued_completed: `Store ne aapka samaan "${req.title}" issue kar diya hai. Store jakar le lein!`,
   };
 
   await supabaseAdmin.from('notifications').insert({
     user_id: req.user_id,
-    title: 'Store Request Update',
+    title: titleMap[nextStatus],
     message: msgMap[nextStatus],
   });
 
@@ -334,11 +340,11 @@ export async function sendLeaveRemarkAction(
 
   if (error) return { error: error.message };
 
-  // Send direct alert to employee mobile view
+  // Send direct alert to employee mobile view in Hindi
   await supabaseAdmin.from('notifications').insert({
     user_id: leave.user_id,
-    title: `HR Message (${reviewer.full_name})`,
-    message: `Regarding your leave: "${remark}"`,
+    title: `💬 Office Se Message Aaya Hai (${reviewer.full_name})`,
+    message: `Aapki chutti ke baare me: "${remark}"`,
   });
 
   revalidatePath('/dashboard');
@@ -396,11 +402,11 @@ export async function revertLeaveApprovalAction(
     })
     .eq('id', leaveId);
 
-  // Alert employee
+  // Alert employee in Hindi
   await supabaseAdmin.from('notifications').insert({
     user_id: leave.user_id,
-    title: 'Leave Approval Revoked',
-    message: `${actor.full_name} has revoked the approval for your leave (${leave.start_date}). Your leave quota has been restored.`,
+    title: '⚠️ Chutti Approval Wapas Liya Gaya',
+    message: `${actor.full_name} ne aapki ${leave.start_date} ki chutti ka approval cancel kar diya hai. Aapka chutti quota wapas restore kar diya gaya hai.`,
   });
 
   revalidatePath('/dashboard');
