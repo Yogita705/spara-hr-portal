@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Calendar, IndianRupee, Package, ShieldCheck,
   CheckCircle2, XCircle, Clock, Bell, LogOut, Search,
@@ -42,6 +43,81 @@ export default function MobileStaffView({
   const [activeTab, setActiveTab] = useState<'home' | 'leave' | 'advance' | 'store' | 'alerts'>('home');
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+  const router = useRouter();
+
+  // Notification sound helper
+  const playPing = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch {}
+  };
+
+  // 1. Ask permission for phone lock-screen / status bar notification
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // 2. Auto-sync background updates every 8 seconds (no manual refresh needed)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      router.refresh();
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [router]);
+
+  // 3. Detect new guarantor request or status change -> Vibrate + Ping + System Alert
+  const prevNotifCount = useRef(notifications.length);
+  const prevGuarantorCount = useRef(guarantorRequests.length);
+
+  useEffect(() => {
+    const hasNewNotif = notifications.length > prevNotifCount.current;
+    const hasNewGuarantor = guarantorRequests.length > prevGuarantorCount.current;
+
+    if (hasNewNotif || hasNewGuarantor) {
+      // Mobile vibration pattern (vibrate-pause-vibrate)
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([250, 100, 250]);
+      }
+      playPing();
+
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        if (hasNewGuarantor) {
+          new Notification('🛡️ SPARA: Guarantor Request', {
+            body: 'A colleague requested you as an Advance Guarantor. Please review.',
+          });
+        } else if (hasNewNotif) {
+          const latest = notifications[0];
+          new Notification(latest?.title || '🔔 SPARA Update', {
+            body: latest?.message || 'You have a new update on your request.',
+          });
+        }
+      }
+    }
+
+    prevNotifCount.current = notifications.length;
+    prevGuarantorCount.current = guarantorRequests.length;
+  }, [notifications.length, guarantorRequests.length, notifications, guarantorRequests]);
 
   // Leave form
   const [leaveType, setLeaveType] = useState<'full_day' | 'half_day' | 'short_leave'>('full_day');
@@ -159,6 +235,26 @@ export default function MobileStaffView({
       </div>
 
       <div className="space-y-4 p-4">
+        {installPrompt && (
+          <div className="flex items-center justify-between rounded-2xl bg-emerald-600 p-3.5 text-white shadow-lg animate-pulse">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">SPARA Mobile App</p>
+              <p className="text-[11px] text-emerald-100">Bina browser open kiye phone me install karein</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!installPrompt) return;
+                installPrompt.prompt();
+                const { outcome } = await installPrompt.userChoice;
+                if (outcome === 'accepted') setInstallPrompt(null);
+              }}
+              className="rounded-xl bg-white px-3.5 py-2 text-xs font-extrabold text-emerald-950 shadow active:scale-95"
+            >
+              📲 Install App
+            </button>
+          </div>
+        )}
+
         {message && (
           <div className={`rounded-xl p-3 text-sm font-semibold ${message.type === 'ok' ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}`}>
             {message.text}
