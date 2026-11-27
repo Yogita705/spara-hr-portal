@@ -25,7 +25,9 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5 rounded-3xl bg-white p-6 shadow-xl">
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">SPARA CORPORATION</p>
-          <h1 className="mt-1 text-2xl font-extrabold text-slate-900">HR & Operations Login</h1>
+          <h1 className="mt-4 text-xl font-bold tracking-tight text-white sm:text-2xl">
+              SPARA Employee Portal
+            </h1>
           <p className="mt-1 text-xs text-slate-500">Enter your Employee ID & 4-Digit PIN</p>
         </div>
 
