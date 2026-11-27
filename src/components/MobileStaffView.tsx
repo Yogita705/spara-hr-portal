@@ -55,19 +55,57 @@ export default function MobileStaffView({
   }, []);
   const router = useRouter();
 
-  // Notification sound helper
+  // iOS Safari AudioContext Ref
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // 1. iPhone Audio Unlocker (User ke pehle tap par audio session active ho jayega)
+  useEffect(() => {
+    const unlockAudio = () => {
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!audioCtxRef.current && AudioContextClass) {
+          audioCtxRef.current = new AudioContextClass();
+        }
+        if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+          audioCtxRef.current.resume();
+        }
+      } catch {}
+    };
+
+    window.addEventListener('touchstart', unlockAudio, { once: true });
+    window.addEventListener('click', unlockAudio, { once: true });
+    return () => {
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('click', unlockAudio);
+    };
+  }, []);
+
+  // 2. Loud & Crisp Audio Bell for iPhone Speakers
   const playPing = () => {
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AudioContextClass();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(800, ctx.currentTime);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+
+      // Loud 2-tone Apple Style Chime (D6 high pitch)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.85, ctx.currentTime); // High volume
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
       osc.start();
-      osc.stop(ctx.currentTime + 0.4);
+      osc.stop(ctx.currentTime + 0.5);
     } catch {}
   };
 
