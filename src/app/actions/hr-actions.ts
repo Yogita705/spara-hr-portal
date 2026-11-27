@@ -39,14 +39,55 @@ export async function reviewLeaveAction(
     return { error: 'Only MDO or Boss can approve/reject leaves.' };
   }
 
-  const { error } = await supabaseAdmin.rpc('review_leave_request', {
-    p_leave_id: leaveId,
-    p_reviewer_id: reviewerId,
-    p_decision: decision,
-    p_remarks: remarks || null,
-  });
+  // 1. Fetch leave request details
+  const { data: leave, error: fetchErr } = await supabaseAdmin
+    .from('leave_requests')
+    .select('id, user_id, days_count, status')
+    .eq('id', leaveId)
+    .single();
+
+  if (fetchErr || !leave) return { error: 'Leave request not found.' };
+  if (leave.status !== 'pending') return { error: 'This request has already been reviewed.' };
+
+  // 2. ONLY cut leaves quota if decision is APPROVED (Rejected will NOT cut any quota)
+  if (decision === 'approved') {
+    const { data: emp } = await supabaseAdmin
+      .from('employees')
+      .select('leaves_used')
+      .eq('id', leave.user_id)
+      .single();
+
+    if (emp) {
+      const newUsed = Number(emp.leaves_used || 0) + Number(leave.days_count || 1);
+      await supabaseAdmin
+        .from('employees')
+        .update({ leaves_used: newUsed })
+        .eq('id', leave.user_id);
+    }
+  }
+
+  // 3. Update leave request status & remarks
+  const { error } = await supabaseAdmin
+    .from('leave_requests')
+    .update({
+      status: decision,
+      remarks: remarks || null,
+      reviewed_by: reviewerId,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq('id', leaveId);
 
   if (error) return { error: error.message };
+
+  // 4. Send notification to employee
+  await supabaseAdmin.from('notifications').insert({
+    user_id: leave.user_id,
+    title: decision === 'approved' ? 'Leave Approved' : 'Leave Rejected',
+    message: decision === 'approved' 
+      ? 'Your leave request has been approved.' 
+      : `Your leave request was rejected.${remarks ? ` Reason: ${remarks}` : ''}`,
+  });
+
   revalidatePath('/dashboard');
   revalidatePath('/');
   return { success: true };
