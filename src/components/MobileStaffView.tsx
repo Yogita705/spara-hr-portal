@@ -57,16 +57,21 @@ export default function MobileStaffView({
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // 1. iPhone WebKit Security Bypass (Audio + Voice Priming)
+  // 1. Mobile WebKit & Android Gesture Unlock (Audio + Voice + Notification Permission)
   useEffect(() => {
     const unlockBoth = () => {
       try {
+        // Mobile Notification permission ask on first user screen tap
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+
         // AudioContext unlock
         const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
         if (!audioCtxRef.current && AudioClass) audioCtxRef.current = new AudioClass();
         if (audioCtxRef.current?.state === 'suspended') audioCtxRef.current.resume();
 
-        // SpeechSynthesis Priming for iPhone (Empty utterance primes Apple speech engine)
+        // SpeechSynthesis Priming for Mobile
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
           const primer = new SpeechSynthesisUtterance(' ');
           primer.volume = 0.01;
@@ -128,13 +133,6 @@ export default function MobileStaffView({
       }
     } catch {}
   };
-
-  // 1. Ask permission for phone lock-screen / status bar notification
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }, []);
 
   // 2. Auto-sync background updates every 8 seconds (no manual refresh needed)
   useEffect(() => {
@@ -199,9 +197,24 @@ export default function MobileStaffView({
 
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         const latest = notifications[0];
-        new Notification(hasNewGuarantor ? '🛡️ Guarantor Request' : (latest?.title || '🔔 SPARA Update'), {
-          body: hasNewGuarantor ? 'Aapko colleague ne guarantor banaya hai.' : (latest?.message || hindiVoiceMessage),
-        });
+        const notifTitle = hasNewGuarantor ? '🛡️ Guarantor Request' : (latest?.title || '🔔 SPARA Update');
+        const notifBody = hasNewGuarantor ? 'Aapko colleague ne guarantor banaya hai.' : (latest?.message || hindiVoiceMessage);
+
+        try {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.showNotification(notifTitle, {
+                body: notifBody,
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+              });
+            }).catch(() => {
+              try { new Notification(notifTitle, { body: notifBody }); } catch {}
+            });
+          } else {
+            new Notification(notifTitle, { body: notifBody });
+          }
+        } catch {}
       }
     }
 
