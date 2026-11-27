@@ -55,57 +55,67 @@ export default function MobileStaffView({
   }, []);
   const router = useRouter();
 
-  // iOS Safari AudioContext Ref
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // 1. iPhone Audio Unlocker (User ke pehle tap par audio session active ho jayega)
+  // Phone screen touch karte hi audio unlock
   useEffect(() => {
-    const unlockAudio = () => {
+    const unlock = () => {
       try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        if (!audioCtxRef.current && AudioContextClass) {
-          audioCtxRef.current = new AudioContextClass();
-        }
-        if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-          audioCtxRef.current.resume();
-        }
+        const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!audioCtxRef.current && AudioClass) audioCtxRef.current = new AudioClass();
+        if (audioCtxRef.current?.state === 'suspended') audioCtxRef.current.resume();
       } catch {}
     };
-
-    window.addEventListener('touchstart', unlockAudio, { once: true });
-    window.addEventListener('click', unlockAudio, { once: true });
+    window.addEventListener('touchstart', unlock, { once: true });
+    window.addEventListener('click', unlock, { once: true });
     return () => {
-      window.removeEventListener('touchstart', unlockAudio);
-      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('click', unlock);
     };
   }, []);
 
-  // 2. Loud & Crisp Audio Bell for iPhone Speakers
-  const playPing = () => {
+  // Chime + Bolne wala Hindi AI Voice engine
+  const playVoiceNotification = (hindiText: string) => {
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioContextClass();
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
+      // 1. Pehle Chime (Tun) bajega
+      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioClass) {
+        if (!audioCtxRef.current) audioCtxRef.current = new AudioClass();
+        const ctx = audioCtxRef.current;
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.8, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
       }
 
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      // 2. Chime ke 0.3 second baad Hindi me bolegi
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(hindiText);
+        utterance.lang = 'hi-IN'; // Pure Hindi voice
+        utterance.volume = 1.0;   // Full Volume
+        utterance.rate = 0.95;    // Natural clear speed
+        utterance.pitch = 1.05;
 
-      // Loud 2-tone Apple Style Chime (D6 high pitch)
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.85, ctx.currentTime); // High volume
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.5);
+        const voices = window.speechSynthesis.getVoices();
+        const hindiVoice = voices.find(
+          (v) => v.lang.includes('hi') || v.lang.includes('IN') || v.name.includes('India')
+        );
+        if (hindiVoice) utterance.voice = hindiVoice;
+
+        setTimeout(() => {
+          window.speechSynthesis.speak(utterance);
+        }, 300);
+      }
     } catch {}
   };
 
@@ -124,32 +134,64 @@ export default function MobileStaffView({
     return () => clearInterval(timer);
   }, [router]);
 
-  // 3. Detect new guarantor request or status change -> Vibrate + Ping + System Alert
+  // 3. App Icon Badge Count + Hindi Voice Detection
   const prevNotifCount = useRef(notifications.length);
   const prevGuarantorCount = useRef(guarantorRequests.length);
+
+  // Phone App Icon par red number (badge) set karna
+  useEffect(() => {
+    const unread = notifications.filter((n) => !n.is_read).length;
+    if (typeof navigator !== 'undefined' && 'setAppBadge' in navigator) {
+      if (unread > 0) {
+        (navigator as any).setAppBadge(unread).catch(() => {});
+      } else {
+        (navigator as any).clearAppBadge().catch(() => {});
+      }
+    }
+  }, [notifications]);
 
   useEffect(() => {
     const hasNewNotif = notifications.length > prevNotifCount.current;
     const hasNewGuarantor = guarantorRequests.length > prevGuarantorCount.current;
 
     if (hasNewNotif || hasNewGuarantor) {
-      // Mobile vibration pattern (vibrate-pause-vibrate)
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
         navigator.vibrate([250, 100, 250]);
       }
-      playPing();
+
+      // Voice kya bolegi decide karein
+      let hindiVoiceMessage = 'Aapke liye nayi notification aayi hai.';
+
+      if (hasNewGuarantor) {
+        hindiVoiceMessage = 'Dhyan dein, aapko advance guarantor banne ki request aayi hai.';
+      } else if (hasNewNotif && notifications[0]) {
+        const title = (notifications[0].title || '').toLowerCase();
+        const msg = (notifications[0].message || '').toLowerCase();
+        const combined = `${title} ${msg}`;
+
+        if (combined.includes('chutti') && (combined.includes('manzoor') || combined.includes('approve') || combined.includes('haan'))) {
+          hindiVoiceMessage = 'Aapki chutti manzoor ho gayi hai.';
+        } else if (combined.includes('chutti') && (combined.includes('mana') || combined.includes('reject'))) {
+          hindiVoiceMessage = 'Aapki chutti ki request mana kar di gayi hai.';
+        } else if (combined.includes('advance') && (combined.includes('manzoor') || combined.includes('approve') || combined.includes('release') || combined.includes('settle'))) {
+          hindiVoiceMessage = 'Aapka advance manzoor ho gaya hai.';
+        } else if (combined.includes('advance') && (combined.includes('mana') || combined.includes('reject'))) {
+          hindiVoiceMessage = 'Aapka advance mana ho gaya hai.';
+        } else if (combined.includes('store') || combined.includes('samaan')) {
+          hindiVoiceMessage = 'Store se aapke samaan ki nayi update aayi hai.';
+        } else {
+          hindiVoiceMessage = notifications[0].title || 'Office se naya message aaya hai.';
+        }
+      }
+
+      // Tun bajao aur bolkar sunao
+      playVoiceNotification(hindiVoiceMessage);
 
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        if (hasNewGuarantor) {
-          new Notification('🛡️ SPARA: Guarantor Request', {
-            body: 'A colleague requested you as an Advance Guarantor. Please review.',
-          });
-        } else if (hasNewNotif) {
-          const latest = notifications[0];
-          new Notification(latest?.title || '🔔 SPARA Update', {
-            body: latest?.message || 'You have a new update on your request.',
-          });
-        }
+        const latest = notifications[0];
+        new Notification(hasNewGuarantor ? '🛡️ Guarantor Request' : (latest?.title || '🔔 SPARA Update'), {
+          body: hasNewGuarantor ? 'Aapko colleague ne guarantor banaya hai.' : (latest?.message || hindiVoiceMessage),
+        });
       }
     }
 
