@@ -126,7 +126,7 @@ export default function AdminDashboard({
         
         let spokenText = '';
         if (kind === 'leave') {
-          spokenText = `Attention! You have received a new leave request ${detail ? `from ${detail}` : ''}.`;
+          spokenText = detail ? detail : 'New leave request received.';
         } else if (kind === 'advance') {
           spokenText = `Alert! You have received a new salary advance request ${detail ? `for ${detail}` : ''}.`;
         } else {
@@ -231,16 +231,29 @@ export default function AdminDashboard({
   useEffect(() => {
     if (allLeaves.length > prevLeavesCount.current) {
       const latest = allLeaves[0];
-      playVoiceAlert('leave', latest?.applicant?.full_name);
+      const applicantName = latest?.applicant?.full_name || 'Staff';
+      const dateStr = latest?.end_date && latest?.end_date !== latest?.start_date
+        ? `${latest.start_date} to ${latest.end_date}`
+        : (latest?.start_date || '');
+      const leaveTypeStr = (latest?.type || 'full_day').replace('_', ' ');
+      const reasonStr = latest?.reason || 'No reason provided';
+      const timeStr = latest?.type === 'short_leave' && latest?.start_time ? ` from ${latest.start_time} to ${latest.end_time}` : '';
+
+      // Poori detail bolkar sunayega: Name, Date, Type, Dropdown Reason & Remarks
+      const voiceMessage = `New leave request received from ${applicantName}. Date: ${dateStr}. Type: ${leaveTypeStr}${timeStr}. Reason: ${reasonStr}.`;
+
+      playVoiceAlert('leave', voiceMessage);
+
       setLiveToast({
         type: 'leave',
-        title: 'LEAVE CONCURRENCE • PENDING AUDIT',
-        desc: `${latest?.applicant?.full_name || 'Staff'} (${latest?.applicant?.emp_code || 'EMP'}) scheduled ${latest?.type?.replace('_', ' ')} (${latest?.days_count || 1}d) starting ${latest?.start_date}.`,
+        title: 'NEW LEAVE REQUEST RECEIVED',
+        desc: `${applicantName} (${latest?.applicant?.emp_code || 'EMP'}) • ${leaveTypeStr} (${latest?.days_count || 1}d) • Date: ${dateStr} • Reason: ${reasonStr}`,
         targetTab: 'leaves',
       });
+
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        const notif = new Notification(`[ACTION REQUIRED] Leave: ${latest?.applicant?.full_name || 'Staff'}`, {
-          body: `📅 Period: ${latest?.start_date} (${latest?.days_count || 1}d) • Dept: ${latest?.applicant?.department || 'Operations'}`,
+        const notif = new Notification(`Leave Request: ${applicantName}`, {
+          body: `📅 Date: ${dateStr} (${latest?.days_count || 1}d)\n📝 Reason: ${reasonStr}\n🏢 Dept: ${latest?.applicant?.department || 'Staff'}`,
           tag: 'spara-leave-inbound',
         } as NotificationOptions);
         notif.onclick = () => { window.focus(); setTab('leaves'); };
