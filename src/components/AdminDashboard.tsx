@@ -721,11 +721,23 @@ export default function AdminDashboard({
                             <div className="text-[10px] text-slate-400 font-medium">Used: {used} of {totalQuota}</div>
                           </td>
 
-                          {/* Col 5: Reason */}
+                          {/* Col 5: Reason & Attachment */}
                           <td className="px-4 py-3.5 max-w-xs">
-                            <span className="italic text-slate-600 line-clamp-2" title={l.reason || 'No reason provided'}>
-                              {l.reason ? `“${l.reason}”` : '—'}
-                            </span>
+                            <div className="space-y-1">
+                              <span className="italic text-slate-800 font-medium line-clamp-2" title={l.reason || 'No reason'}>
+                                {l.reason ? `“${l.reason}”` : '—'}
+                              </span>
+                              {l.attachment_url && (
+                                <a
+                                  href={l.attachment_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                                >
+                                  📎 View Attached Card/Slip
+                                </a>
+                              )}
+                            </div>
                           </td>
 
                           {/* Col 6: Status */}

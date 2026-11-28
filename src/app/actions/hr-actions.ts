@@ -10,6 +10,7 @@ export async function applyLeaveAction(formData: {
   endDate: string;
   daysCount: number;
   reason: string;
+  attachmentUrl?: string;
   startTime?: string;
   endTime?: string;
 }) {
@@ -18,7 +19,7 @@ export async function applyLeaveAction(formData: {
     return { error: 'Short leave ke liye Start Time aur End Time select karein.' };
   }
 
-  const { error } = await supabaseAdmin.from('leave_requests').insert({
+  const insertData: any = {
     user_id: formData.userId,
     type: formData.type,
     start_date: formData.startDate,
@@ -27,7 +28,13 @@ export async function applyLeaveAction(formData: {
     reason: formData.reason,
     start_time: formData.startTime || null,
     end_time: formData.endTime || null,
-  });
+  };
+
+  if (formData.attachmentUrl) {
+    insertData.attachment_url = formData.attachmentUrl;
+  }
+
+  const { error } = await supabaseAdmin.from('leave_requests').insert(insertData);
 
   if (error) return { error: error.message };
   revalidatePath('/');

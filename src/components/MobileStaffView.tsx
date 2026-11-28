@@ -42,6 +42,9 @@ export default function MobileStaffView({
 }) {
   const [activeTab, setActiveTab] = useState<'home' | 'leave' | 'advance' | 'store' | 'alerts'>('home');
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  // Bhasha switch: Default Hindi rahegi taaki labour ko aasaani ho
+  const [lang, setLang] = useState<'hi' | 'en'>('hi');
+  const t = (hi: string, en: string) => (lang === 'hi' ? hi : en);
   const [busy, setBusy] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
 
@@ -228,7 +231,14 @@ export default function MobileStaffView({
   const [endDate, setEndDate] = useState('');
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('12:00');
-  const [reason, setReason] = useState('');
+  const [reasonCategory, setReasonCategory] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [attachment, setAttachment] = useState<string | null>(null);
+  const [attachmentName, setAttachmentName] = useState('');
+
+  const isMarriage = reasonCategory.includes('Marriage') || reasonCategory.includes('Shaadi');
+  const isSick = reasonCategory.includes('Sick') || reasonCategory.includes('Doctor') || reasonCategory.includes('Tabiyat');
+  const isAttachmentRequired = isMarriage || isSick;
 
   const computedDays = () => {
     if (leaveType === 'half_day') return 0.5;
@@ -296,13 +306,22 @@ export default function MobileStaffView({
   return (
     <div className="mx-auto min-h-screen max-w-md bg-slate-50 pb-16 text-slate-900">
       {/* Header */}
-      <div className="bg-slate-900 px-5 py-5 text-white">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs text-slate-400">SPARA CORPORATION • {currentUser.emp_code}</p>
-            <h1 className="text-xl font-bold">{currentUser.full_name}</h1>
+      <div className="bg-slate-900 px-4 py-4 text-white">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-mono text-slate-400 truncate">SPARA • {currentUser.emp_code}</p>
+            <h1 className="text-base font-extrabold truncate text-white">{currentUser.full_name}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5">
+            {/* Clean compact language toggle */}
+            <button
+              type="button"
+              onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')}
+              className="flex items-center gap-1 rounded-xl border border-amber-400/40 bg-slate-800 px-2.5 py-2 text-xs font-extrabold text-amber-300 shadow-xs active:scale-95"
+            >
+              🌐 {lang === 'hi' ? 'Eng' : 'हिंदी'}
+            </button>
+
             <button
               onClick={async () => {
                 setActiveTab('alerts');
@@ -405,29 +424,44 @@ export default function MobileStaffView({
         {activeTab === 'home' && (
           <>
             <div className="grid grid-cols-3 gap-2">
-            <button
-  onClick={() => setActiveTab('leave')}
-  className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm active:scale-95"
->
-  <span className="text-xl">📅</span>
-  <span className="mt-1.5 text-xs font-bold text-slate-800 leading-tight">Apply Leave</span>
-</button>
+              <button
+                onClick={() => setActiveTab('leave')}
+                className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm active:scale-95"
+              >
+                <span className="text-2xl">📅</span>
+                <span className="mt-1 text-xs font-black text-slate-900 leading-tight">
+                  {t('छुट्टी मांगें', 'Apply Leave')}
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium">
+                  {t('Leave Form', 'Time Off')}
+                </span>
+              </button>
 
-<button
-  onClick={() => setActiveTab('advance')}
-  className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm active:scale-95"
->
-  <span className="text-xl">💰</span>
-  <span className="mt-1.5 text-xs font-bold text-slate-800 leading-tight">Salary Advance</span>
-</button>
+              <button
+                onClick={() => setActiveTab('advance')}
+                className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm active:scale-95"
+              >
+                <span className="text-2xl">💰</span>
+                <span className="mt-1 text-xs font-black text-slate-900 leading-tight">
+                  {t('एडवांस पैसा', 'Salary Advance')}
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium">
+                  {t('उधार / EMI', 'Short Loan')}
+                </span>
+              </button>
 
-<button
-  onClick={() => setActiveTab('store')}
-  className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm active:scale-95"
->
-  <span className="text-xl">📦</span>
-  <span className="mt-1.5 text-xs font-bold text-slate-800 leading-tight">Requests</span>
-</button>
+              <button
+                onClick={() => setActiveTab('store')}
+                className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm active:scale-95"
+              >
+                <span className="text-2xl">📦</span>
+                <span className="mt-1 text-xs font-black text-slate-900 leading-tight">
+                  {t('सामान / वर्दी', 'Store Requests')}
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium">
+                  {t('वर्दी, डायरी, रिपेयर', 'Uniform & IT')}
+                </span>
+              </button>
             </div>
 
             <div className="pt-2">
@@ -513,12 +547,12 @@ export default function MobileStaffView({
         {/* LEAVE FORM */}
         {activeTab === 'leave' && (
           <div className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-bold">Apply for Leave</h2>
+            <h2 className="text-base font-black text-slate-900">{t('छुट्टी मांगें', 'Apply Leave')}</h2>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { key: 'full_day', label: 'Full Day' },
-                { key: 'half_day', label: 'Half Day' },
-                { key: 'short_leave', label: 'Short' },
+                { key: 'full_day', label: t('पूरा दिन', 'Full Day') },
+                { key: 'half_day', label: t('आधा दिन', 'Half Day') },
+                { key: 'short_leave', label: t('कम समय', 'Short') },
               ].map((item) => (
                 <button
                   key={item.key}
@@ -603,25 +637,107 @@ export default function MobileStaffView({
               </div>
             )}
 
+            {/* LEAVE REASON DROPDOWN */}
+            <div>
+            <label className="text-[11px] font-bold text-slate-600 uppercase">
+                {t('वजह चुनें', 'Reason')}
+              </label>
+              <select
+                value={reasonCategory}
+                onChange={(e) => {
+                  setReasonCategory(e.target.value);
+                  setAttachment(null);
+                  setAttachmentName('');
+                }}
+                className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-bold text-slate-900 bg-white"
+              >
+                <option value="" disabled>
+                  {t('-- वजह चुनें --', '-- Select Reason --')}
+                </option>
+                <option value="Bimari (Sick)">{t('🤒 बीमारी', '🤒 Sick')}</option>
+                <option value="Shaadi (Marriage)">{t('💍 शादी', '💍 Marriage')}</option>
+                <option value="Gharelu Kaam (Personal)">{t('🏠 घरेलू काम', '🏠 Personal Work')}</option>
+                <option value="Gaon Jaana (Native)">{t('🚆 गांव जाना', '🚆 Native Visit')}</option>
+                <option value="Doctor">{t('🩺 डॉक्टर', '🩺 Doctor')}</option>
+                <option value="Other">{t('📝 अन्य', '📝 Other')}</option>
+              </select>
+            </div>
+
+            {/* MANDATORY ATTACHMENT UPLOAD BOX */}
+            {isAttachmentRequired && (
+              <div className="rounded-xl border-2 border-dashed border-amber-400 bg-amber-50/70 p-3 text-xs">
+                <p className="font-bold text-amber-900">
+                  {isMarriage ? '⚠️ Shaadi Ka Card Upload Karna Zaroori Hai' : '⚠️ Doctor Prescription / Parchi Upload Karna Zaroori Hai'}
+                </p>
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  {isMarriage
+                    ? 'Shaadi ke card ki photo click karke upload karein.'
+                    : 'Doctor ki prescription ya medical slip attach karein.'}
+                </p>
+
+                <div className="mt-2.5 flex items-center gap-2">
+                  <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700">
+                    📷 Photo / File Chunein
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setAttachmentName(file.name);
+                          const reader = new FileReader();
+                          reader.onload = (uploadEvent) => {
+                            setAttachment(uploadEvent.target?.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+
+                  {attachmentName && (
+                    <span className="text-[11px] font-semibold text-emerald-800 truncate max-w-[180px]">
+                      ✓ {attachmentName}
+                    </span>
+                  )}
+                </div>
+
+                {!attachment && (
+                  <p className="mt-1.5 text-[10px] font-bold text-rose-600">
+                    * Bina document attach kiye submit nahi hoga.
+                  </p>
+                )}
+              </div>
+            )}
+
             <textarea
-              placeholder="Reason for leave..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              rows={2}
+              placeholder="Extra details (agar kuch aur likhna ho toh)..."
+              value={customReason}
+              onChange={(e) => setCustomReason(e.target.value)}
               className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900"
             />
-            <button
-              disabled={busy || !startDate}
+
+<button
+              disabled={busy || !startDate || !reasonCategory || (isAttachmentRequired && !attachment)}
               onClick={async () => {
                 setBusy(true);
                 const finalEndDate = leaveType === 'full_day' ? (endDate || startDate) : startDate;
                 const daysCount = computedDays();
+                const fullReason = customReason
+                  ? `${reasonCategory}: ${customReason}`
+                  : reasonCategory;
+
                 const res = await applyLeaveAction({
                   userId: currentUser.id,
                   type: leaveType,
                   startDate,
                   endDate: finalEndDate,
                   daysCount,
-                  reason,
+                  reason: fullReason,
+                  attachmentUrl: attachment || undefined,
                   startTime: leaveType === 'short_leave' ? startTime : undefined,
                   endTime: leaveType === 'short_leave' ? endTime : undefined,
                 });
@@ -629,39 +745,39 @@ export default function MobileStaffView({
                 if (res.error) setMessage({ type: 'err', text: res.error });
                 else {
                   setMessage({ type: 'ok', text: `Leave request for ${daysCount} day(s) submitted!` });
-                  setStartDate(''); setEndDate(''); setReason('');
+                  setStartDate(''); setEndDate(''); setCustomReason(''); setAttachment(null); setAttachmentName('');
                   setActiveTab('home');
                 }
               }}
-              className="w-full rounded-xl bg-slate-900 py-3.5 font-bold text-white disabled:opacity-50"
+              className="w-full rounded-xl bg-slate-900 py-3.5 font-bold text-white disabled:opacity-40 disabled:bg-slate-400"
             >
               {busy ? 'Sending...' : 'Submit Leave'}
             </button>
           </div>
         )}
 
-        {/* ADVANCE FORM WITH SEARCHABLE 174 GUARANTOR LIST */}
+        {/* ADVANCE FORM */}
         {activeTab === 'advance' && (
           <div className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-bold">Request Salary Advance</h2>
+            <h2 className="text-base font-black text-slate-900">{t('एडवांस पैसा', 'Salary Advance')}</h2>
             <input
               type="number"
-              placeholder="Amount (₹) Kitna advance chahiye?"
+              placeholder={t('रुपये (₹)', 'Amount (₹)')}
               value={advAmount}
               onChange={(e) => setAdvAmount(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900 font-semibold"
+              className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900 font-bold"
             />
             <input
               type="text"
-              placeholder="Reason (Zaroorat ki wajah)"
+              placeholder={t('वजह', 'Reason')}
               value={advReason}
               onChange={(e) => setAdvReason(e.target.value)}
               className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900"
             />
 
             <div>
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                Salary Se Katoti (Repayment EMI):
+              <label className="text-[11px] font-bold text-slate-600 uppercase">
+                {t('किस्त (महीने)', 'EMI (Months)')}
               </label>
               <div className="mt-1.5 grid grid-cols-3 gap-2">
                 {([1, 2, 3] as const).map((months) => (
@@ -675,13 +791,10 @@ export default function MobileStaffView({
                         : 'border-slate-200 bg-slate-50 text-slate-700'
                     }`}
                   >
-                    {months} {months === 1 ? 'Month' : 'Months'}
+                    {months} {t(months === 1 ? 'महीना' : 'महीने', months === 1 ? 'Month' : 'Months')}
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-[10px] text-slate-500 font-medium">
-                Advance ki rashi {advInstallments} mahine ki barabar kisto mein salary se kategi (Max 3 Mahine).
-              </p>
             </div>
             <div>
               <p className="mb-2 text-sm font-bold text-slate-700">
@@ -754,26 +867,27 @@ export default function MobileStaffView({
         {/* REQUEST FORM */}
         {activeTab === 'store' && (
           <div className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-bold">New Request</h2>
+            <h2 className="text-base font-black text-slate-900">{t('नया सामान', 'New Request')}</h2>
             <select
               value={storeCat}
               onChange={(e) => setStoreCat(e.target.value as any)}
-              className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900"
+              className="w-full rounded-xl border border-slate-300 p-3 text-sm font-bold text-slate-900 bg-white"
             >
-              <option value="uniform">Uniform</option>
-              <option value="stationery">Stationery</option>
-              <option value="laptop_repair">Laptop / IT Repair</option>
-              <option value="tools_other">Other Requirement</option>
+              <option value="uniform">{t('वर्दी (Uniform)', 'Uniform')}</option>
+              <option value="stationery">{t('स्टेशनरी / कॉपी-पेन', 'Stationery')}</option>
+              <option value="laptop_repair">{t('कंप्यूटर / रिपेयर', 'IT / Repair')}</option>
+              <option value="tools_other">{t('अन्य सामान', 'Other')}</option>
             </select>
             <input
               type="text"
-              placeholder="Item / Issue Title (e.g. New Uniform XL)"
+              placeholder={t('सामान का नाम (जैसे: वर्दी L)', 'Item Title')}
               value={storeTitle}
               onChange={(e) => setStoreTitle(e.target.value)}
               className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900"
             />
             <textarea
-              placeholder="Details..."
+              rows={2}
+              placeholder={t('पूरी बात लिखें...', 'Details...')}
               value={storeDesc}
               onChange={(e) => setStoreDesc(e.target.value)}
               className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900"
