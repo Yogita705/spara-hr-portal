@@ -243,6 +243,7 @@ export default function MobileStaffView({
   // Advance form
   const [advAmount, setAdvAmount] = useState('');
   const [advReason, setAdvReason] = useState('');
+  const [advInstallments, setAdvInstallments] = useState<1 | 2 | 3>(3);
   const [selectedGuarantors, setSelectedGuarantors] = useState<string[]>([]);
   const [guarantorSearch, setGuarantorSearch] = useState('');
 
@@ -645,18 +646,43 @@ export default function MobileStaffView({
             <h2 className="text-lg font-bold">Request Salary Advance</h2>
             <input
               type="number"
-              placeholder="Amount (₹)"
+              placeholder="Amount (₹) Kitna advance chahiye?"
               value={advAmount}
               onChange={(e) => setAdvAmount(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900"
+              className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900 font-semibold"
             />
             <input
               type="text"
-              placeholder="Reason"
+              placeholder="Reason (Zaroorat ki wajah)"
               value={advReason}
               onChange={(e) => setAdvReason(e.target.value)}
               className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900"
             />
+
+            <div>
+              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                Salary Se Katoti (Repayment EMI):
+              </label>
+              <div className="mt-1.5 grid grid-cols-3 gap-2">
+                {([1, 2, 3] as const).map((months) => (
+                  <button
+                    key={months}
+                    type="button"
+                    onClick={() => setAdvInstallments(months)}
+                    className={`rounded-xl py-2.5 text-xs font-bold transition border ${
+                      advInstallments === months
+                        ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs'
+                        : 'border-slate-200 bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    {months} {months === 1 ? 'Month' : 'Months'}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-[10px] text-slate-500 font-medium">
+                Advance ki rashi {advInstallments} mahine ki barabar kisto mein salary se kategi (Max 3 Mahine).
+              </p>
+            </div>
             <div>
               <p className="mb-2 text-sm font-bold text-slate-700">
                 Select 4 Guarantors ({selectedGuarantors.length}/4)
@@ -707,13 +733,14 @@ export default function MobileStaffView({
                   userId: currentUser.id,
                   amount: Number(advAmount),
                   reason: advReason,
+                  installments: advInstallments,
                   guarantorIds: selectedGuarantors,
                 });
                 setBusy(false);
                 if (res.error) setMessage({ type: 'err', text: res.error });
                 else {
-                  setMessage({ type: 'ok', text: 'Sent to 4 guarantors for approval!' });
-                  setAdvAmount(''); setAdvReason(''); setSelectedGuarantors([]);
+                  setMessage({ type: 'ok', text: `Sent to 4 guarantors for approval! (${advInstallments} EMI Selected)` });
+                  setAdvAmount(''); setAdvReason(''); setAdvInstallments(3); setSelectedGuarantors([]);
                   setActiveTab('home');
                 }
               }}

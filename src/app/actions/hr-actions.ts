@@ -104,14 +104,18 @@ export async function applyAdvanceAction(formData: {
   userId: string;
   amount: number;
   reason: string;
+  installments?: number;
   guarantorIds: string[];
 }) {
   if (!formData.amount || formData.amount <= 0) return { error: 'Enter valid amount.' };
 
+  const emiMonths = formData.installments && formData.installments <= 3 ? formData.installments : 3;
+  const fullReasonWithEmi = `[EMI: ${emiMonths} Mahine] ${formData.reason || ''}`.trim();
+
   const { data, error } = await supabaseAdmin.rpc('create_advance_with_guarantors', {
     p_user_id: formData.userId,
     p_amount: formData.amount,
-    p_reason: formData.reason,
+    p_reason: fullReasonWithEmi,
     p_guarantor_ids: formData.guarantorIds,
   });
 
@@ -143,9 +147,9 @@ export async function bossReviewAdvanceAction(
   approve: boolean,
   remarks?: string
 ) {
-  const { data: boss } = await supabaseAdmin.from('employees').select('role').eq('id', bossId).single();
-  if (!boss || boss.role !== 'boss') {
-    return { error: 'Only Boss (Prabh Sir / MD) can approve advances.' };
+  const { data: reviewer } = await supabaseAdmin.from('employees').select('role, full_name').eq('id', bossId).single();
+  if (!reviewer || !['boss', 'hr_mdo'].includes(reviewer.role)) {
+    return { error: 'Only Channi Sir (Boss) or HR/MDO (Emergency) can review advances.' };
   }
 
   const newStatus = approve ? 'approved_for_accounts' : 'rejected_by_boss';
@@ -171,12 +175,13 @@ export async function bossReviewAdvanceAction(
       .eq('advance_id', advanceId);
   }
 
+  const reviewerTitle = reviewer.role === 'boss' ? 'Channi Sir' : `${reviewer.full_name} (HR/MDO Emergency)`;
   await supabaseAdmin.from('notifications').insert({
     user_id: adv.user_id,
-    title: approve ? '✅ Advance Manzoor Ho Gaya Hai' : '❌ Advance Mana Kar Diya Gaya Hai',
+    title: approve ? '✅ Advance Sanctioned (Approved)' : '❌ Advance Mana Kar Diya Gaya Hai',
     message: approve
-      ? `Prabh Sir ne aapka ₹${Number(adv.amount).toLocaleString('en-IN')} advance approve kar diya hai. Payout ke liye Accounts bhej diya gaya hai.`
-      : `Aapka ₹${Number(adv.amount).toLocaleString('en-IN')} advance mana ho gaya hai.${remarks ? ` Wajah: "${remarks}"` : ''} Guarantors unlock ho gaye hain.`,
+      ? `${reviewerTitle} ne aapka ₹${Number(adv.amount).toLocaleString('en-IN')} advance approve kar diya hai. Kripya Accounts Department (Gaurav Sir) se jakar cash receive karein.`
+      : `Aapka ₹${Number(adv.amount).toLocaleString('en-IN')} advance mana ho gaya hai.${remarks ? ` Wajah: "${remarks}"` : ''} Sabhi guarantors unlock kar diye gaye hain.`,
   });
 
   revalidatePath('/dashboard');
@@ -266,15 +271,15 @@ export async function updateStoreStatusAction(
   if (error) return { error: error.message };
 
   const titleMap = {
-    approved_to_store: '📦 Store Request Pass Ho Gayi Hai',
-    rejected_by_mdo: '❌ Store Request Mana Ho Gayi Hai',
-    issued_completed: '✅ Samaan Ready Hai - Collect Karein',
+    approved_to_store: '📦 Request Approved - Store Dispatch',
+    rejected_by_mdo: '❌ Request Mana Ho Gayi Hai',
+    issued_completed: '✅ Samaan Issue Ho Gaya',
   };
 
   const msgMap = {
-    approved_to_store: `MDO ne "${req.title}" pass kar di hai. Store se lene ke liye ready rahein.`,
-    rejected_by_mdo: `Aapki request "${req.title}" MDO dwara mana (reject) kar di gayi hai.`,
-    issued_completed: `Store ne aapka samaan "${req.title}" issue kar diya hai. Store jakar le lein!`,
+    approved_to_store: `MDO Office se "${req.title}" approve ho gayi hai. Samaan lene ke liye Sarabjot (Store / Stationery) se contact karein.`,
+    rejected_by_mdo: `Aapki request "${req.title}" MDO dwara mana kar di gayi hai.`,
+    issued_completed: `Store (Sarabjot) ne aapka samaan "${req.title}" issue kar diya hai. Collect kar lein!`,
   };
 
   await supabaseAdmin.from('notifications').insert({

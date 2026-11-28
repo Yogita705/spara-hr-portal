@@ -842,14 +842,15 @@ export default function AdminDashboard({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {statusBadge(a.status)}
-                      {a.status === 'pending_boss' && currentUser.role === 'boss' && (
-                        <>
+                    {statusBadge(a.status)}
+                      {a.status === 'pending_boss' && (currentUser.role === 'boss' || currentUser.role === 'hr_mdo') && (
+                        <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => bossReviewAdvanceAction(a.id, currentUser.id, true)}
                             className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-emerald-700"
+                            title={currentUser.role === 'boss' ? 'Sanction Payout (Channi Sir Authority)' : 'Emergency HR Acknowledge/Pass'}
                           >
-                            Approve Payout
+                            {currentUser.role === 'boss' ? 'Sign & Approve' : 'HR Emergency Pass'}
                           </button>
                           <button
                             onClick={() => bossReviewAdvanceAction(a.id, currentUser.id, false)}
@@ -857,7 +858,7 @@ export default function AdminDashboard({
                           >
                             Reject
                           </button>
-                        </>
+                        </div>
                       )}
                       {a.status === 'approved_for_accounts' && (currentUser.role === 'accounts' || currentUser.role === 'boss') && (
                         <button
