@@ -102,31 +102,35 @@ export default function AdminDashboard({
   const prevAdvancesCount = useRef(allAdvances.length);
   const prevStoreCount = useRef(allStore.length);
 
-  // High-End Loud Chime + Professional AI Voice Announcement
+  // High-End Loud Chime + Guaranteed AI Voice Announcement (Chrome-fixed)
   const playVoiceAlert = (kind: 'leave' | 'advance' | 'store', detail?: string) => {
     try {
-      // 1. Loud Executive Chime (Volume boosted to 0.75)
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      // 1. Executive Chime
+      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioClass) {
+        const ctx = new AudioClass();
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.85, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.45);
+      }
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12); // A5
-      gain.gain.setValueAtTime(0.75, ctx.currentTime); // LOUD volume
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.45);
-
-      // 2. High-End Spoken Voice Alert
+      // 2. Clear Speech Output
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); // Clear any previous queue
-        
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume(); // Fixes Chrome freeze
+
         let spokenText = '';
         if (kind === 'leave') {
-          spokenText = detail ? detail : 'New leave request received.';
+          spokenText = detail || 'New leave request received.';
         } else if (kind === 'advance') {
           spokenText = `Alert! You have received a new salary advance request ${detail ? `for ${detail}` : ''}.`;
         } else {
@@ -134,34 +138,53 @@ export default function AdminDashboard({
         }
 
         const utterance = new SpeechSynthesisUtterance(spokenText);
-        utterance.volume = 1.0; // Max Loudness (100%)
-        utterance.rate = 0.95;  // Clear, crisp enterprise delivery speed
-        utterance.pitch = 1.05; // Natural vocal tone
+        utterance.volume = 1.0;
+        utterance.rate = 0.92;
+        utterance.pitch = 1.0;
+        utterance.lang = 'en-IN'; // Indian English Accent
 
-        // Pick clear English female/assistant voice if available
         const voices = window.speechSynthesis.getVoices();
         const preferredVoice = voices.find(
-          (v) =>
-            v.lang.startsWith('en') &&
-            (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Zira') || v.name.includes('Samantha'))
+          (v) => v.lang === 'en-IN' || v.lang === 'hi-IN' || v.name.includes('India') || v.name.includes('Google') || v.name.includes('Natural')
         );
         if (preferredVoice) utterance.voice = preferredVoice;
 
-        // Speak right after chime
+        // Chrome bug fix: window reference prevents garbage collection
+        (window as any)._activeUtterance = utterance;
+
         setTimeout(() => {
+          window.speechSynthesis.resume();
           window.speechSynthesis.speak(utterance);
-        }, 200);
+        }, 120);
       }
-    } catch {}
+    } catch (err) {
+      console.error('Audio alert error:', err);
+    }
   };
 
-  // Request browser desktop notification permission on first load
+  // First-click Gesture Unlock (Bypasses Browser Audio & Speech Blocking)
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'default') {
-        Notification.requestPermission();
-      }
-    }
+    const unlockVoice = () => {
+      try {
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          window.speechSynthesis.resume();
+          // Micro primer to unlock audio channel
+          const primer = new SpeechSynthesisUtterance('');
+          primer.volume = 0.01;
+          window.speechSynthesis.speak(primer);
+        }
+      } catch {}
+    };
+
+    window.addEventListener('click', unlockVoice, { once: true });
+    window.addEventListener('keydown', unlockVoice, { once: true });
+    return () => {
+      window.removeEventListener('click', unlockVoice);
+      window.removeEventListener('keydown', unlockVoice);
+    };
   }, []);
 
   // Personal leave/store state
