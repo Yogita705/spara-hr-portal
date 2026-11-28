@@ -708,6 +708,11 @@ export default function AdminDashboard({
                             <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 capitalize border border-blue-200/60">
                               {l.type.replace('_', ' ')} ({l.days_count || 1}d)
                             </span>
+                            {l.type === 'short_leave' && l.start_time && (
+                              <div className="mt-1 font-mono text-[10px] font-bold text-indigo-600">
+                                ⏰ {l.start_time} - {l.end_time}
+                              </div>
+                            )}
                           </td>
 
                           {/* Col 4: Annual Quota */}

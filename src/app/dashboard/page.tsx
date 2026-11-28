@@ -25,22 +25,22 @@ export default async function DashboardPage() {
     { data: myLeaves },
     { data: myStore },
     { data: guarantorRequests },
-  ] = await Promise.all([
+    ] = await Promise.all([
     supabaseAdmin
-      .from('leave_requests')
-      .select('*, applicant:employees!leave_requests_user_id_fkey(full_name, emp_code, department, annual_leave_quota, leaves_used)')
-      .order('created_at', { ascending: false })
-      .limit(50),
+    .from('leave_requests')
+    .select('*, applicant:employees!leave_requests_user_id_fkey(full_name, emp_code, department, annual_leave_quota, leaves_used)')
+    .order('created_at', { ascending: false })
+    .limit(50),
     supabaseAdmin
-      .from('advance_requests')
-      .select('*, applicant:employees!advance_requests_user_id_fkey(full_name, emp_code, department), guarantors:advance_guarantors(consent_status, guarantor:employees(full_name))')
-      .order('created_at', { ascending: false })
-      .limit(50),
+    .from('advance_requests')
+    .select('*, applicant:employees!advance_requests_user_id_fkey(full_name, emp_code, department), guarantors:advance_guarantors(consent_status, guarantor:employees(full_name))')
+    .order('created_at', { ascending: false })
+    .limit(50),
     supabaseAdmin
-      .from('store_requests')
-      .select('*, applicant:employees!store_requests_user_id_fkey(full_name, emp_code, department)')
-      .order('created_at', { ascending: false })
-      .limit(50),
+    .from('store_requests')
+    .select('*, applicant:employees!store_requests_user_id_fkey(full_name, emp_code, department)')
+    .order('created_at', { ascending: false })
+    .limit(50),
     supabaseAdmin.from('employees').select('*').eq('is_active', true).order('emp_code'),
     supabaseAdmin.from('advance_guarantors').select('guarantor_user_id').eq('is_active_lock', true),
     supabaseAdmin.from('leave_requests').select('*').eq('user_id', userId).order('created_at', { ascending: false }),

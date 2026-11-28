@@ -10,8 +10,13 @@ export async function applyLeaveAction(formData: {
   endDate: string;
   daysCount: number;
   reason: string;
+  startTime?: string;
+  endTime?: string;
 }) {
   if (!formData.startDate) return { error: 'Please select a date.' };
+  if (formData.type === 'short_leave' && (!formData.startTime || !formData.endTime)) {
+    return { error: 'Short leave ke liye Start Time aur End Time select karein.' };
+  }
 
   const { error } = await supabaseAdmin.from('leave_requests').insert({
     user_id: formData.userId,
@@ -20,6 +25,8 @@ export async function applyLeaveAction(formData: {
     end_date: formData.endDate || formData.startDate,
     days_count: formData.daysCount,
     reason: formData.reason,
+    start_time: formData.startTime || null,
+    end_time: formData.endTime || null,
   });
 
   if (error) return { error: error.message };

@@ -226,6 +226,8 @@ export default function MobileStaffView({
   const [leaveType, setLeaveType] = useState<'full_day' | 'half_day' | 'short_leave'>('full_day');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [startTime, setStartTime] = useState('10:00');
+  const [endTime, setEndTime] = useState('12:00');
   const [reason, setReason] = useState('');
 
   const computedDays = () => {
@@ -401,49 +403,43 @@ export default function MobileStaffView({
         {/* HOME */}
         {activeTab === 'home' && (
           <>
-            <div className="grid grid-cols-1 gap-3">
-              <button
-                onClick={() => { setMessage(null); setActiveTab('leave'); }}
-                className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm active:scale-95"
-              >
-                <div className="rounded-xl bg-blue-100 p-3 text-blue-700"><Calendar className="h-7 w-7" /></div>
-                <div>
-                <h2 className="text-base font-bold text-slate-900">Apply Leave</h2>
-                  <p className="text-xs text-slate-500">Full day, Half day & instant approval color</p>
-                </div>
-              </button>
+            <div className="grid grid-cols-3 gap-2">
+            <button
+  onClick={() => setActiveTab('leave')}
+  className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm active:scale-95"
+>
+  <span className="text-xl">📅</span>
+  <span className="mt-1.5 text-xs font-bold text-slate-800 leading-tight">Apply Leave</span>
+</button>
 
-              <button
-                onClick={() => { setMessage(null); setActiveTab('advance'); }}
-                className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm active:scale-95"
-              >
-                <div className="rounded-xl bg-emerald-100 p-3 text-emerald-700"><IndianRupee className="h-7 w-7" /></div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Salary Advance</h2>
-                  <p className="text-xs text-slate-500">Pick 4 guarantors → Channi Sir → Accounts</p>
-                </div>
-              </button>
+<button
+  onClick={() => setActiveTab('advance')}
+  className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm active:scale-95"
+>
+  <span className="text-xl">💰</span>
+  <span className="mt-1.5 text-xs font-bold text-slate-800 leading-tight">Salary Advance</span>
+</button>
 
-              <button
-                onClick={() => { setMessage(null); setActiveTab('store'); }}
-                className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm active:scale-95"
-              >
-                <div className="rounded-xl bg-purple-100 p-3 text-purple-700"><Package className="h-7 w-7" /></div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Store / Uniform / Repair</h2>
-                  <p className="text-xs text-slate-500">Uniform, stationery, laptop repair requests</p>
-                </div>
-              </button>
+<button
+  onClick={() => setActiveTab('store')}
+  className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 text-center shadow-sm active:scale-95"
+>
+  <span className="text-xl">📦</span>
+  <span className="mt-1.5 text-xs font-bold text-slate-800 leading-tight">Requests</span>
+</button>
             </div>
 
             <div className="pt-2">
               <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">My Requests Status</h3>
               <div className="space-y-2">
-                {myLeaves.map((l) => (
+              {myLeaves.map((l) => (
                   <div key={l.id} className="flex items-center justify-between rounded-xl bg-white p-3.5 shadow-sm">
                     <div>
                       <p className="text-sm font-bold">Leave ({l.type.replace('_', ' ')})</p>
-                      <p className="text-xs text-slate-500">{l.start_date} • {l.days_count} day(s)</p>
+                      <p className="text-xs text-slate-500">
+                        {l.start_date}
+                        {l.type === 'short_leave' && l.start_time ? ` (${l.start_time} - ${l.end_time})` : ` • ${l.days_count} day(s)`}
+                      </p>
                     </div>
                     {statusBadge(l.status)}
                   </div>
@@ -568,17 +564,41 @@ export default function MobileStaffView({
                 )}
               </div>
             ) : (
-              <div>
-                <label className="text-[11px] font-bold text-slate-500">DATE</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    setEndDate(e.target.value);
-                  }}
-                  className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900"
-                />
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500">DATE</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      setEndDate(e.target.value);
+                    }}
+                    className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900"
+                  />
+                </div>
+                {leaveType === 'short_leave' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-500">FROM TIME</label>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-500">TO TIME</label>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -601,6 +621,8 @@ export default function MobileStaffView({
                   endDate: finalEndDate,
                   daysCount,
                   reason,
+                  startTime: leaveType === 'short_leave' ? startTime : undefined,
+                  endTime: leaveType === 'short_leave' ? endTime : undefined,
                 });
                 setBusy(false);
                 if (res.error) setMessage({ type: 'err', text: res.error });
@@ -702,10 +724,10 @@ export default function MobileStaffView({
           </div>
         )}
 
-        {/* STORE / REPAIR FORM */}
+        {/* REQUEST FORM */}
         {activeTab === 'store' && (
           <div className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-bold">Store / Repair Request</h2>
+            <h2 className="text-lg font-bold">New Request</h2>
             <select
               value={storeCat}
               onChange={(e) => setStoreCat(e.target.value as any)}
