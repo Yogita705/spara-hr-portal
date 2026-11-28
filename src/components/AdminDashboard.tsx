@@ -102,89 +102,66 @@ export default function AdminDashboard({
   const prevAdvancesCount = useRef(allAdvances.length);
   const prevStoreCount = useRef(allStore.length);
 
-  // High-End Loud Chime + Guaranteed AI Voice Announcement (Chrome-fixed)
+  // High-End Loud Chime + Professional AI Voice Announcement
   const playVoiceAlert = (kind: 'leave' | 'advance' | 'store', detail?: string) => {
     try {
-      // 1. Executive Chime
-      const AudioClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioClass) {
-        const ctx = new AudioClass();
-        if (ctx.state === 'suspended') ctx.resume();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.85, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.45);
-      }
+      // 1. Loud Executive Chime (Volume boosted to 0.75)
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-      // 2. Clear Speech Output
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12); // A5
+      gain.gain.setValueAtTime(0.75, ctx.currentTime); // LOUD volume
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.45);
+
+      // 2. High-End Spoken Voice Alert
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.resume(); // Fixes Chrome freeze
-
+        window.speechSynthesis.cancel(); // Clear any previous queue
+        
         let spokenText = '';
         if (kind === 'leave') {
-          spokenText = detail || 'New leave request received.';
+          spokenText = `Attention! You have received a new leave request ${detail ? `from ${detail}` : ''}.`;
         } else if (kind === 'advance') {
           spokenText = `Alert! You have received a new salary advance request ${detail ? `for ${detail}` : ''}.`;
         } else {
-          spokenText = `Notification! New store and repair requirement received.`;
+          spokenText = `Notification! New request received.`;
         }
 
         const utterance = new SpeechSynthesisUtterance(spokenText);
-        utterance.volume = 1.0;
-        utterance.rate = 0.92;
-        utterance.pitch = 1.0;
-        utterance.lang = 'en-IN'; // Indian English Accent
+        utterance.volume = 1.0; // Max Loudness (100%)
+        utterance.rate = 0.95;  // Clear, crisp enterprise delivery speed
+        utterance.pitch = 1.05; // Natural vocal tone
 
+        // Pick clear English female/assistant voice if available
         const voices = window.speechSynthesis.getVoices();
         const preferredVoice = voices.find(
-          (v) => v.lang === 'en-IN' || v.lang === 'hi-IN' || v.name.includes('India') || v.name.includes('Google') || v.name.includes('Natural')
+          (v) =>
+            v.lang.startsWith('en') &&
+            (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Zira') || v.name.includes('Samantha'))
         );
         if (preferredVoice) utterance.voice = preferredVoice;
 
-        // Chrome bug fix: window reference prevents garbage collection
-        (window as any)._activeUtterance = utterance;
-
+        // Speak right after chime
         setTimeout(() => {
-          window.speechSynthesis.resume();
           window.speechSynthesis.speak(utterance);
-        }, 120);
+        }, 200);
       }
-    } catch (err) {
-      console.error('Audio alert error:', err);
-    }
+    } catch {}
   };
 
-  // First-click Gesture Unlock (Bypasses Browser Audio & Speech Blocking)
+  // Request browser desktop notification permission on first load
   useEffect(() => {
-    const unlockVoice = () => {
-      try {
-        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-          Notification.requestPermission();
-        }
-        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-          window.speechSynthesis.resume();
-          // Micro primer to unlock audio channel
-          const primer = new SpeechSynthesisUtterance('');
-          primer.volume = 0.01;
-          window.speechSynthesis.speak(primer);
-        }
-      } catch {}
-    };
-
-    window.addEventListener('click', unlockVoice, { once: true });
-    window.addEventListener('keydown', unlockVoice, { once: true });
-    return () => {
-      window.removeEventListener('click', unlockVoice);
-      window.removeEventListener('keydown', unlockVoice);
-    };
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
   }, []);
 
   // Personal leave/store state
@@ -254,29 +231,16 @@ export default function AdminDashboard({
   useEffect(() => {
     if (allLeaves.length > prevLeavesCount.current) {
       const latest = allLeaves[0];
-      const applicantName = latest?.applicant?.full_name || 'Staff';
-      const dateStr = latest?.end_date && latest?.end_date !== latest?.start_date
-        ? `${latest.start_date} to ${latest.end_date}`
-        : (latest?.start_date || '');
-      const leaveTypeStr = (latest?.type || 'full_day').replace('_', ' ');
-      const reasonStr = latest?.reason || 'No reason provided';
-      const timeStr = latest?.type === 'short_leave' && latest?.start_time ? ` from ${latest.start_time} to ${latest.end_time}` : '';
-
-      // Poori detail bolkar sunayega: Name, Date, Type, Dropdown Reason & Remarks
-      const voiceMessage = `New leave request received from ${applicantName}. Date: ${dateStr}. Type: ${leaveTypeStr}${timeStr}. Reason: ${reasonStr}.`;
-
-      playVoiceAlert('leave', voiceMessage);
-
+      playVoiceAlert('leave', latest?.applicant?.full_name);
       setLiveToast({
         type: 'leave',
-        title: 'NEW LEAVE REQUEST RECEIVED',
-        desc: `${applicantName} (${latest?.applicant?.emp_code || 'EMP'}) • ${leaveTypeStr} (${latest?.days_count || 1}d) • Date: ${dateStr} • Reason: ${reasonStr}`,
+        title: 'LEAVE CONCURRENCE • PENDING AUDIT',
+        desc: `${latest?.applicant?.full_name || 'Staff'} (${latest?.applicant?.emp_code || 'EMP'}) scheduled ${latest?.type?.replace('_', ' ')} (${latest?.days_count || 1}d) starting ${latest?.start_date}.`,
         targetTab: 'leaves',
       });
-
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        const notif = new Notification(`Leave Request: ${applicantName}`, {
-          body: `📅 Date: ${dateStr} (${latest?.days_count || 1}d)\n📝 Reason: ${reasonStr}\n🏢 Dept: ${latest?.applicant?.department || 'Staff'}`,
+        const notif = new Notification(`[ACTION REQUIRED] Leave: ${latest?.applicant?.full_name || 'Staff'}`, {
+          body: `📅 Period: ${latest?.start_date} (${latest?.days_count || 1}d) • Dept: ${latest?.applicant?.department || 'Operations'}`,
           tag: 'spara-leave-inbound',
         } as NotificationOptions);
         notif.onclick = () => { window.focus(); setTab('leaves'); };
