@@ -546,8 +546,10 @@ export default function MobileStaffView({
 
         {/* LEAVE FORM */}
         {activeTab === 'leave' && (
-          <div className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+          <div className="space-y-4 rounded-2xl bg-white p-4 shadow-sm overflow-hidden">
             <h2 className="text-base font-black text-slate-900">{t('छुट्टी मांगें', 'Apply Leave')}</h2>
+            
+            {/* Leave Type Toggle */}
             <div className="grid grid-cols-3 gap-2">
               {[
                 { key: 'full_day', label: t('पूरा दिन', 'Full Day') },
@@ -558,19 +560,21 @@ export default function MobileStaffView({
                   key={item.key}
                   type="button"
                   onClick={() => setLeaveType(item.key as any)}
-                  className={`rounded-xl py-3 text-sm font-bold ${
-                    leaveType === item.key ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'
+                  className={`rounded-xl py-2.5 text-xs font-bold transition ${
+                    leaveType === item.key ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700'
                   }`}
                 >
                   {item.label}
                 </button>
               ))}
             </div>
+
+            {/* Date / Time Inputs with iPhone overflow fix */}
             {leaveType === 'full_day' ? (
               <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-500">FROM DATE</label>
+                <div className="grid grid-cols-2 gap-2 min-w-0">
+                  <div className="min-w-0">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">{t('शुरू तारीख', 'From Date')}</label>
                     <input
                       type="date"
                       value={startDate}
@@ -578,30 +582,30 @@ export default function MobileStaffView({
                         setStartDate(e.target.value);
                         if (!endDate || e.target.value > endDate) setEndDate(e.target.value);
                       }}
-                      className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900"
+                      className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-2 py-2.5 text-xs font-semibold text-slate-900 bg-white"
                     />
                   </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-500">TO DATE</label>
+                  <div className="min-w-0">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase">{t('आखिरी तारीख', 'To Date')}</label>
                     <input
                       type="date"
                       min={startDate}
                       value={endDate || startDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900"
+                      className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-2 py-2.5 text-xs font-semibold text-slate-900 bg-white"
                     />
                   </div>
                 </div>
                 {startDate && (
                   <p className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">
-                    Total Duration: {computedDays()} Day(s)
+                    {t(`कुल अवधि: ${computedDays()} दिन`, `Total Duration: ${computedDays()} Day(s)`)}
                   </p>
                 )}
               </div>
             ) : (
-              <div className="space-y-2">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-500">DATE</label>
+              <div className="space-y-2.5">
+                <div className="min-w-0">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase">{t('तारीख', 'Date')}</label>
                   <input
                     type="date"
                     value={startDate}
@@ -609,27 +613,27 @@ export default function MobileStaffView({
                       setStartDate(e.target.value);
                       setEndDate(e.target.value);
                     }}
-                    className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900"
+                    className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-3 py-2.5 text-xs font-semibold text-slate-900 bg-white"
                   />
                 </div>
                 {leaveType === 'short_leave' && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-500">FROM TIME</label>
+                  <div className="grid grid-cols-2 gap-2 min-w-0">
+                    <div className="min-w-0 overflow-hidden">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase">{t('कब से', 'From')}</label>
                       <input
                         type="time"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900"
+                        className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-2 py-2.5 text-xs font-semibold text-slate-900 bg-white"
                       />
                     </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-500">TO TIME</label>
+                    <div className="min-w-0 overflow-hidden">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase">{t('कब तक', 'To')}</label>
                       <input
                         type="time"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold text-slate-900"
+                        className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-2 py-2.5 text-xs font-semibold text-slate-900 bg-white"
                       />
                     </div>
                   </div>
@@ -637,10 +641,10 @@ export default function MobileStaffView({
               </div>
             )}
 
-            {/* LEAVE REASON DROPDOWN */}
+            {/* Reason Selection */}
             <div>
-            <label className="text-[11px] font-bold text-slate-600 uppercase">
-                {t('वजह चुनें', 'Reason')}
+              <label className="text-[11px] font-bold text-slate-500 uppercase">
+                {t('छुट्टी की वजह', 'Reason')}
               </label>
               <select
                 value={reasonCategory}
@@ -649,7 +653,7 @@ export default function MobileStaffView({
                   setAttachment(null);
                   setAttachmentName('');
                 }}
-                className="mt-1 w-full rounded-xl border border-slate-300 p-3 text-sm font-bold text-slate-900 bg-white"
+                className="mt-1 w-full rounded-xl border border-slate-300 p-2.5 text-xs font-bold text-slate-900 bg-white"
               >
                 <option value="" disabled>
                   {t('-- वजह चुनें --', '-- Select Reason --')}
@@ -663,21 +667,18 @@ export default function MobileStaffView({
               </select>
             </div>
 
-            {/* MANDATORY ATTACHMENT UPLOAD BOX */}
+            {/* Mandatory Document Box */}
             {isAttachmentRequired && (
-              <div className="rounded-xl border-2 border-dashed border-amber-400 bg-amber-50/70 p-3 text-xs">
+              <div className="rounded-xl border border-dashed border-amber-400 bg-amber-50/80 p-3 text-xs">
                 <p className="font-bold text-amber-900">
-                  {isMarriage ? '⚠️ Shaadi Ka Card Upload Karna Zaroori Hai' : '⚠️ Doctor Prescription / Parchi Upload Karna Zaroori Hai'}
-                </p>
-                <p className="text-[11px] text-amber-800 mt-0.5">
                   {isMarriage
-                    ? 'Shaadi ke card ki photo click karke upload karein.'
-                    : 'Doctor ki prescription ya medical slip attach karein.'}
+                    ? t('⚠️ शादी का कार्ड लगाएं', '⚠️ Upload Wedding Card')
+                    : t('⚠️ डॉक्टर की पर्ची लगाएं', '⚠️ Upload Doctor Slip')}
                 </p>
 
-                <div className="mt-2.5 flex items-center gap-2">
-                  <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700">
-                    📷 Photo / File Chunein
+                <div className="mt-2 flex items-center gap-2">
+                  <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow-xs active:scale-95">
+                    📷 {t('फोटो / फाइल चुनें', 'Upload File')}
                     <input
                       type="file"
                       accept="image/*,application/pdf"
@@ -698,7 +699,7 @@ export default function MobileStaffView({
                   </label>
 
                   {attachmentName && (
-                    <span className="text-[11px] font-semibold text-emerald-800 truncate max-w-[180px]">
+                    <span className="text-[11px] font-semibold text-emerald-800 truncate max-w-[150px]">
                       ✓ {attachmentName}
                     </span>
                   )}
@@ -706,21 +707,23 @@ export default function MobileStaffView({
 
                 {!attachment && (
                   <p className="mt-1.5 text-[10px] font-bold text-rose-600">
-                    * Bina document attach kiye submit nahi hoga.
+                    * {t('डॉक्यूमेंट लगाना जरूरी है', 'Document is required')}
                   </p>
                 )}
               </div>
             )}
 
+            {/* Extra Details */}
             <textarea
               rows={2}
-              placeholder="Extra details (agar kuch aur likhna ho toh)..."
+              placeholder={t('अन्य विवरण (वैकल्पिक)...', 'Extra details (optional)...')}
               value={customReason}
               onChange={(e) => setCustomReason(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-900"
+              className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
             />
 
-<button
+            {/* Submit Button */}
+            <button
               disabled={busy || !startDate || !reasonCategory || (isAttachmentRequired && !attachment)}
               onClick={async () => {
                 setBusy(true);
@@ -744,14 +747,14 @@ export default function MobileStaffView({
                 setBusy(false);
                 if (res.error) setMessage({ type: 'err', text: res.error });
                 else {
-                  setMessage({ type: 'ok', text: `Leave request for ${daysCount} day(s) submitted!` });
+                  setMessage({ type: 'ok', text: t(`छुट्टी की अर्जी (${daysCount} दिन) भेज दी गई!`, `Leave request for ${daysCount} day(s) submitted!`) });
                   setStartDate(''); setEndDate(''); setCustomReason(''); setAttachment(null); setAttachmentName('');
                   setActiveTab('home');
                 }
               }}
-              className="w-full rounded-xl bg-slate-900 py-3.5 font-bold text-white disabled:opacity-40 disabled:bg-slate-400"
+              className="w-full rounded-xl bg-slate-900 py-3 text-sm font-bold text-white disabled:opacity-40 disabled:bg-slate-400 active:scale-95 transition"
             >
-              {busy ? 'Sending...' : 'Submit Leave'}
+              {busy ? t('भेजा जा रहा है...', 'Sending...') : t('छुट्टी की अर्जी भेजें', 'Submit Leave')}
             </button>
           </div>
         )}
