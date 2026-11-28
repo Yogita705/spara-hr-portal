@@ -546,7 +546,7 @@ export default function MobileStaffView({
 
         {/* LEAVE FORM */}
         {activeTab === 'leave' && (
-          <div className="space-y-4 rounded-2xl bg-white p-4 shadow-sm overflow-hidden">
+          <div className="space-y-3.5 rounded-2xl bg-white p-4 shadow-sm">
             <h2 className="text-base font-black text-slate-900">{t('छुट्टी मांगें', 'Apply Leave')}</h2>
             
             {/* Leave Type Toggle */}
@@ -569,12 +569,14 @@ export default function MobileStaffView({
               ))}
             </div>
 
-            {/* Date / Time Inputs with iPhone overflow fix */}
+            {/* Date & Time Contained Cards (Never cuts on iPhone Safari) */}
             {leaveType === 'full_day' ? (
               <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2 min-w-0">
-                  <div className="min-w-0">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase">{t('शुरू तारीख', 'From Date')}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-1 focus-within:ring-blue-600">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {t('शुरू तारीख', 'From Date')}
+                    </label>
                     <input
                       type="date"
                       value={startDate}
@@ -582,17 +584,19 @@ export default function MobileStaffView({
                         setStartDate(e.target.value);
                         if (!endDate || e.target.value > endDate) setEndDate(e.target.value);
                       }}
-                      className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-2 py-2.5 text-xs font-semibold text-slate-900 bg-white"
+                      className="mt-0.5 block w-full border-0 bg-transparent p-0 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-0"
                     />
                   </div>
-                  <div className="min-w-0">
-                    <label className="text-[11px] font-bold text-slate-500 uppercase">{t('आखिरी तारीख', 'To Date')}</label>
+                  <div className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-1 focus-within:ring-blue-600">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {t('आखिरी तारीख', 'To Date')}
+                    </label>
                     <input
                       type="date"
                       min={startDate}
                       value={endDate || startDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-2 py-2.5 text-xs font-semibold text-slate-900 bg-white"
+                      className="mt-0.5 block w-full border-0 bg-transparent p-0 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-0"
                     />
                   </div>
                 </div>
@@ -604,8 +608,10 @@ export default function MobileStaffView({
               </div>
             ) : (
               <div className="space-y-2.5">
-                <div className="min-w-0">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase">{t('तारीख', 'Date')}</label>
+                <div className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-1 focus-within:ring-blue-600">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    {t('तारीख', 'Date')}
+                  </label>
                   <input
                     type="date"
                     value={startDate}
@@ -613,27 +619,32 @@ export default function MobileStaffView({
                       setStartDate(e.target.value);
                       setEndDate(e.target.value);
                     }}
-                    className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-3 py-2.5 text-xs font-semibold text-slate-900 bg-white"
+                    className="mt-0.5 block w-full border-0 bg-transparent p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0"
                   />
                 </div>
+
                 {leaveType === 'short_leave' && (
-                  <div className="grid grid-cols-2 gap-2 min-w-0">
-                    <div className="min-w-0 overflow-hidden">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase">{t('कब से', 'From')}</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-1 focus-within:ring-blue-600">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        {t('कब से', 'From Time')}
+                      </label>
                       <input
                         type="time"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
-                        className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-2 py-2.5 text-xs font-semibold text-slate-900 bg-white"
+                        className="mt-0.5 block w-full border-0 bg-transparent p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0"
                       />
                     </div>
-                    <div className="min-w-0 overflow-hidden">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase">{t('कब तक', 'To')}</label>
+                    <div className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-1 focus-within:ring-blue-600">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        {t('कब तक', 'To Time')}
+                      </label>
                       <input
                         type="time"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
-                        className="mt-1 w-full min-w-0 max-w-full rounded-xl border border-slate-300 px-2 py-2.5 text-xs font-semibold text-slate-900 bg-white"
+                        className="mt-0.5 block w-full border-0 bg-transparent p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0"
                       />
                     </div>
                   </div>
@@ -642,9 +653,9 @@ export default function MobileStaffView({
             )}
 
             {/* Reason Selection */}
-            <div>
-              <label className="text-[11px] font-bold text-slate-500 uppercase">
-                {t('छुट्टी की वजह', 'Reason')}
+            <div className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-1 focus-within:ring-blue-600">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                {t('छुट्टी की वजह', 'Reason for Leave')}
               </label>
               <select
                 value={reasonCategory}
@@ -653,7 +664,7 @@ export default function MobileStaffView({
                   setAttachment(null);
                   setAttachmentName('');
                 }}
-                className="mt-1 w-full rounded-xl border border-slate-300 p-2.5 text-xs font-bold text-slate-900 bg-white"
+                className="mt-0.5 block w-full border-0 bg-transparent p-0 text-sm font-bold text-slate-900 focus:outline-none focus:ring-0"
               >
                 <option value="" disabled>
                   {t('-- वजह चुनें --', '-- Select Reason --')}
@@ -714,13 +725,18 @@ export default function MobileStaffView({
             )}
 
             {/* Extra Details */}
-            <textarea
-              rows={2}
-              placeholder={t('अन्य विवरण (वैकल्पिक)...', 'Extra details (optional)...')}
-              value={customReason}
-              onChange={(e) => setCustomReason(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-900"
-            />
+            <div className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-1 focus-within:ring-blue-600">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                {t('अन्य विवरण (वैकल्पिक)', 'Extra Details (Optional)')}
+              </label>
+              <textarea
+                rows={2}
+                placeholder={t('कोई खास बात लिखनी हो तो लिखें...', 'Any additional remarks...')}
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+                className="mt-1 block w-full border-0 bg-transparent p-0 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+              />
+            </div>
 
             {/* Submit Button */}
             <button
